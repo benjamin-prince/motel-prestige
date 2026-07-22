@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base, SessionLocal
 from . import models  # ensure all models are imported before create_all
 from .routers import rooms, guests, reservations, keycards, billing, currency, config
-from .routers import auth, housekeeping, maintenance, inventory
+from .routers import auth, housekeeping, maintenance, inventory, fnb
 from .dependencies import get_current_user
 from .migrations import run_schema_patches
 from .seeders import run_all_seeders
@@ -96,6 +96,7 @@ app.include_router(config.router,       prefix="/api", dependencies=_auth)
 app.include_router(housekeeping.router, prefix="/api", dependencies=_auth)
 app.include_router(maintenance.router,  prefix="/api", dependencies=_auth)
 app.include_router(inventory.router,    prefix="/api", dependencies=_auth)
+app.include_router(fnb.router,          prefix="/api", dependencies=_auth)
 
 
 @app.get("/api/health")

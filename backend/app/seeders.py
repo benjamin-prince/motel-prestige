@@ -643,6 +643,7 @@ def seed_roles(db: Session):
                 "guests.view","guests.create","guests.edit",
                 "kc.view","kc.issue","kc.issue.new_booking","kc.revoke","kc.report_lost","kc.test_access",
                 "acc.invoices.view","acc.payments.view","acc.payments.create","acc.caisse",
+                "fnb.menu.view","fnb.orders.view","fnb.orders.manage",
             ),
         },
         {

@@ -190,6 +190,21 @@ export const api = {
   getMenuSubcategories: (parent?: string) => request<{ value_en: string; value_fr: string; parent_value_en: string }[]>(`/config/menu-subcategories${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
   createMenuItem: (data: any) => request<any>("/config/menu-items", { method: "POST", body: JSON.stringify(data) }),
   updateMenuItem: (id: number, data: any) => request<any>(`/config/menu-items/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  // F&B Orders (POS)
+  getFnbOrders: (params?: { status?: string; outlet?: string; date_from?: string; date_to?: string }) => {
+    const qs = new URLSearchParams(
+      Object.entries(params || {}).filter(([, v]) => v) as [string, string][]
+    ).toString();
+    return request<any[]>(`/fnb/orders${qs ? `?${qs}` : ""}`);
+  },
+  createFnbOrder: (data: any) => request<any>("/fnb/orders", { method: "POST", body: JSON.stringify(data) }),
+  updateFnbOrder: (id: number, data: any) => request<any>(`/fnb/orders/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  chargeFnbToRoom: (id: number, reservationId: number) =>
+    request<any>(`/fnb/orders/${id}/charge-to-room`, { method: "POST", body: JSON.stringify({ reservation_id: reservationId }) }),
+  settleFnbOrder: (id: number, paymentMethod: string) =>
+    request<any>(`/fnb/orders/${id}/settle`, { method: "POST", body: JSON.stringify({ payment_method: paymentMethod }) }),
+  cancelFnbOrder: (id: number) => request<void>(`/fnb/orders/${id}`, { method: "DELETE" }),
+
   getFolioParticulars: (all = false) => request<any[]>(`/config/folio-particulars${all ? "?all=true" : ""}`),
   createFolioParticular: (data: any) => request<any>("/config/folio-particulars", { method: "POST", body: JSON.stringify(data) }),
   updateFolioParticular: (id: number, data: any) => request<any>(`/config/folio-particulars/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
