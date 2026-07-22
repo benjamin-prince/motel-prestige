@@ -231,9 +231,21 @@ def activity_log(
     return q.order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
 
 
-@router.post("/activity", response_model=ActivityLogResponse, status_code=201)
-def log_activity(data: dict, db: Session = Depends(get_db)):
-    entry = ActivityLog(**data)
+class ActivityLogCreate(BaseModel):
+    icon: str = "📋"
+    color: str = "#3b5bdb"
+    message_en: str
+    message_fr: str
+    entity_type: Optional[str] = None
+    entity_id: Optional[int] = None
+
+
+@router.post("/activity", response_model=ActivityLogResponse, status_code=201,
+             dependencies=[Depends(require("admin.audit_log"))])
+def log_activity(data: ActivityLogCreate, db: Session = Depends(get_db)):
+    # Only whitelisted fields — id and created_at are server-owned so an entry
+    # cannot be backdated or spoofed onto another record.
+    entry = ActivityLog(**data.model_dump())
     db.add(entry)
     db.commit()
     db.refresh(entry)

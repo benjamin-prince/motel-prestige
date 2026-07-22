@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
@@ -51,7 +51,7 @@ class ConversionResponse(BaseModel):
 class PaymentCreate(BaseModel):
     reservation_id: int
     invoice_id: Optional[int] = None
-    amount: Decimal
+    amount: Decimal = Field(gt=0)  # a payment is always a positive amount
     currency_code: str
     payment_method: str = "Cash"
     reference: Optional[str] = None

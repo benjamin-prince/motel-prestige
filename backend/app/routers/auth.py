@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -9,6 +11,39 @@ from ..schemas.user import UserLogin, Token, UserResponse, UserCreate, UserUpdat
 from ..services.auth_service import verify_password, create_access_token, hash_password
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+# ── Brute-force throttle ──────────────────────────────────────────────────────
+# In-memory sliding window per client IP. Small motel, single backend container,
+# so a process-local counter is enough — no external store needed.
+_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+_MAX_ATTEMPTS = 10          # failed tries…
+_WINDOW_SECONDS = 300       # …allowed per 5 minutes
+
+
+def _throttle_key(request: Request) -> str:
+    # Behind Caddy the socket peer is the proxy, so the real client IP is the
+    # first hop in X-Forwarded-For. Fall back to the socket address otherwise.
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _check_login_throttle(request: Request) -> None:
+    key = _throttle_key(request)
+    now = time.time()
+    hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < _WINDOW_SECONDS]
+    _LOGIN_ATTEMPTS[key] = hits
+    if len(hits) >= _MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts. Try again in a few minutes. / "
+                   "Trop de tentatives. Réessayez dans quelques minutes.",
+        )
+
+
+def _record_login_failure(request: Request) -> None:
+    _LOGIN_ATTEMPTS.setdefault(_throttle_key(request), []).append(time.time())
 
 
 @router.get("/app-info")
@@ -24,12 +59,16 @@ def app_info(db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/login", response_model=Token)
-def login(data: UserLogin, db: Session = Depends(get_db)):
+def login(data: UserLogin, request: Request, db: Session = Depends(get_db)):
+    _check_login_throttle(request)
     user = db.query(User).filter(User.email == data.email.lower().strip()).first()
     if not user or not verify_password(data.password, user.password_hash):
+        _record_login_failure(request)
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is inactive")
+    # Successful login clears the client's failure counter.
+    _LOGIN_ATTEMPTS.pop(_throttle_key(request), None)
     token = create_access_token({"sub": str(user.id), "role": user.role})
     return {"access_token": token, "token_type": "bearer", "user": user}
 

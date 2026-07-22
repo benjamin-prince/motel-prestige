@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     # except login is refused — business operations happen at the motel only.
     read_only_mode: bool = False
 
+    # Deployment environment: "development" | "production". In production the
+    # app refuses to start with the default secrets (see main.py startup guard).
+    environment: str = "development"
+
     # JWT authentication
     jwt_secret_key: str = "change-this-secret-in-production"
     jwt_algorithm: str = "HS256"

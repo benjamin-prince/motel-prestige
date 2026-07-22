@@ -9,6 +9,21 @@ from .dependencies import get_current_user
 from .migrations import run_schema_patches
 from .seeders import run_all_seeders
 
+from .config import settings as _settings
+
+# Fail-safe: never run in production with the well-known default secrets —
+# a known signing key lets anyone forge a superadmin JWT.
+_DEFAULT_SECRETS = {"change-this-secret-in-production", "dev-secret-key"}
+if _settings.environment == "production" and (
+    _settings.jwt_secret_key in _DEFAULT_SECRETS
+    or _settings.secret_key in _DEFAULT_SECRETS
+    or len(_settings.jwt_secret_key) < 32
+):
+    raise RuntimeError(
+        "Refusing to start: set a strong JWT_SECRET_KEY (>=32 chars) and "
+        "SECRET_KEY in the environment for production."
+    )
+
 Base.metadata.create_all(bind=engine)
 run_schema_patches(engine)  # add columns missing from pre-existing tables
 
@@ -57,9 +72,11 @@ app.add_middleware(
     CORSMiddleware,
     # Reception PCs and the desktop app load the frontend from the server's
     # LAN address, not just localhost — echo back whatever origin called.
-    # Auth is a Bearer token (no cookies), so this is safe.
+    # Auth is a Bearer token sent in the Authorization header; the API never
+    # reads cookies, so credentials are not needed. Keeping allow_credentials
+    # False means a reflected origin can't ride an ambient cookie.
     allow_origin_regex=".*",
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

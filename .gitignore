@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js build
+.next/
+**/.next/
+out/
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secrets & environment — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+*.pem
+*.key
+
+# Logs & temp
+*.log
+.DS_Store
+dist/
+build/
