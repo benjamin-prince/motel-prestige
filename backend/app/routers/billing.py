@@ -18,6 +18,24 @@ router = APIRouter(prefix="/billing", tags=["Billing"])
 
 # --- Folio charges ---
 
+@router.get("/folio-charges", response_model=List[FolioChargeResponse],
+            dependencies=[Depends(require("fo.report", "fo.folio.view", "acc.invoices.view"))])
+def list_all_charges(
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    db: Session = Depends(get_db),
+):
+    """All posted folio charges in a period — feeds the department reports
+    (rooms / restaurant / bar / general)."""
+    from ..models.billing import FolioCharge
+    q = db.query(FolioCharge).filter(FolioCharge.is_void == False)  # noqa: E712
+    if date_from:
+        q = q.filter(FolioCharge.date >= date_from)
+    if date_to:
+        q = q.filter(FolioCharge.date <= date_to)
+    return q.order_by(FolioCharge.date, FolioCharge.id).all()
+
+
 @router.get("/folio/{reservation_id}", response_model=List[FolioChargeResponse], dependencies=[Depends(require("fo.folio.view"))])
 def get_folio(
     reservation_id: int,

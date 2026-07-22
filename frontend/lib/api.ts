@@ -119,6 +119,8 @@ export const api = {
   getCardLogs: (id: number) => request<any[]>(`/keycards/${id}/logs`),
 
   // Billing
+  getAllCharges: (from?: string, to?: string) =>
+    request<FolioCharge[]>(`/billing/folio-charges?${from ? `date_from=${from}&` : ""}${to ? `date_to=${to}` : ""}`),
   getFolio: (reservationId: number) => request<FolioCharge[]>(`/billing/folio/${reservationId}`),
   getFolioSummary: (reservationId: number) => request<any>(`/billing/folio/${reservationId}/summary`),
   addCharge: (data: FolioChargeCreate) => request<FolioCharge>("/billing/folio/charge", { method: "POST", body: JSON.stringify(data) }),

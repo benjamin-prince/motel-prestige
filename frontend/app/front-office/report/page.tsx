@@ -35,18 +35,21 @@ export default function ReportPage() {
   const [generated, setGenerated] = useState<string>("");
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
+  const [charges, setCharges] = useState<any[]>([]);
+  const [tab, setTab] = useState<"general" | "rooms" | "restaurant" | "bar">("general");
 
   const load = async () => {
     setLoading(true);
     try {
-      const [r, res, inv, pay, ov] = await Promise.all([
+      const [r, res, inv, pay, ch, ov] = await Promise.all([
         api.getRooms(),
         api.getReservations(""),
         api.getInvoices(),
         api.getPayments().catch(() => []),
+        api.getAllCharges().catch(() => []),
         api.getPendingCheckouts(),
       ]);
-      setRooms(r); setReservations(res); setInvoices(inv); setPayments(pay); setOverdue(ov);
+      setRooms(r); setReservations(res); setInvoices(inv); setPayments(pay); setCharges(ch); setOverdue(ov);
       // Folio balances of in-house guests — the same source of truth used by
       // the Unsettled page and the check-out debt guard.
       const inHouse = res.filter((x: any) => x.status === "checked_in");
@@ -92,6 +95,43 @@ export default function ReportPage() {
 
   const unsettled = folioBalances.filter(b => b > 0);
 
+  // ── Department split from folio charges (non-void, in period) ──────────────
+  const periodCharges = charges.filter(c => inPeriod(c.date) && c.charge_type !== "payment");
+  const isRestaurant = (p: string) => /restaurant/i.test(p);
+  const isBar = (p: string) => /\bbar\b|mini ?bar|min bar/i.test(p);
+  const restaurantCharges = periodCharges.filter(c => isRestaurant(c.particular));
+  const barCharges = periodCharges.filter(c => isBar(c.particular));
+  const roomCharges = periodCharges.filter(c => c.charge_type === "room");
+  const otherCharges = periodCharges.filter(c =>
+    c.charge_type !== "room" && !isRestaurant(c.particular) && !isBar(c.particular));
+  const sum = (list: any[]) => list.reduce((s, c) => s + Number(c.amount), 0);
+
+  // Per-room stats: nights sold = room-rent postings; extras = other charges on the room
+  const roomStats = rooms.map(r => {
+    const rc = roomCharges.filter(c => c.room_number === r.room_number);
+    const extras = periodCharges.filter(c => c.room_number === r.room_number && c.charge_type !== "room");
+    return { room: r, nights: rc.length, roomRevenue: sum(rc), extras: sum(extras) };
+  }).sort((a, b) => String(a.room.room_number).localeCompare(String(b.room.room_number), undefined, { numeric: true }));
+
+  // Payments grouped by method (in period)
+  const periodPayments = payments.filter(p => inPeriod(p.paid_at));
+  const byMethod = Object.entries(periodPayments.reduce((acc: Record<string, number>, p) => {
+    const k = p.payment_method || "—";
+    acc[k] = (acc[k] || 0) + Number(p.xaf_equivalent ?? p.amount);
+    return acc;
+  }, {})).sort((a, b) => b[1] - a[1]);
+
+  const TABS: { key: typeof tab; icon: string; fr: string; en: string }[] = [
+    { key: "general",    icon: "📊", fr: "Général",    en: "General" },
+    { key: "rooms",      icon: "🛏️", fr: "Chambres",   en: "Rooms" },
+    { key: "restaurant", icon: "🍽️", fr: "Restaurant", en: "Restaurant" },
+    { key: "bar",        icon: "🍹", fr: "Bar",        en: "Bar" },
+  ];
+  const tabTitle = (k: typeof tab) => {
+    const m = TABS.find(x => x.key === k)!;
+    return lang === "fr" ? `Rapport ${m.fr}` : `${m.en} Report`;
+  };
+
   const kpis = [
     { label: t.fo_occ_rate,  value: `${occRate}%`,  icon: "🏨", gradient: "linear-gradient(135deg,#3b5bdb,#4c6ef5)",  note: `${occupied}/${totalRooms}` },
     { label: t.fo_rev_total, value: fmt(collected), icon: "💰", gradient: "linear-gradient(135deg,#059669,#10b981)", note: lang === "fr" ? "Encaissé sur la période" : "Collected in period" },
@@ -117,7 +157,7 @@ export default function ReportPage() {
       {/* Print-only letterhead */}
       <div className="print-only mb-4" style={{ borderBottom: "2px solid #1e293b", paddingBottom: 12 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{current?.name ?? "Motel Prestige"}</div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>{t.fo_report_title}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>{tabTitle(tab)}</div>
         <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
           {lang === "fr" ? "Période" : "Period"} : {from} → {to}
           {generated && <> · {lang === "fr" ? "Généré le" : "Generated"} {generated}</>}
@@ -149,6 +189,19 @@ export default function ReportPage() {
         </p>
       )}
 
+      {/* Report tabs */}
+      <div className="flex gap-2 mb-4 flex-wrap no-print">
+        {TABS.map(m => (
+          <button key={m.key} onClick={() => setTab(m.key)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all"
+            style={tab === m.key
+              ? { background: "var(--blue)", color: "#fff", borderColor: "transparent" }
+              : { background: "var(--card)", color: "var(--muted)", borderColor: "var(--border)" }}>
+            {m.icon} {lang === "fr" ? m.fr : m.en}
+          </button>
+        ))}
+      </div>
+
       {/* Period selector */}
       <div className="card p-3 mb-5 flex flex-wrap items-center gap-2 no-print">
         <span className="text-xs font-bold uppercase tracking-wider mr-1" style={{ color: "var(--muted)" }}>
@@ -170,6 +223,7 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {tab === "general" && (<>
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {kpis.map(k => (
@@ -304,6 +358,181 @@ export default function ReportPage() {
           </div>
         </div>
       </div>
+
+      {/* Department revenue + payment methods */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5 print-2col">
+        <div className="card p-5">
+          <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>
+            {lang === "fr" ? "Revenus par Département" : "Revenue by Department"}
+          </h3>
+          <div className="space-y-3">
+            {[
+              { label: lang === "fr" ? "🛏️ Hébergement" : "🛏️ Rooms", value: sum(roomCharges), color: "var(--blue)" },
+              { label: "🍽️ Restaurant", value: sum(restaurantCharges), color: "#d97706" },
+              { label: "🍹 Bar", value: sum(barCharges), color: "#7c3aed" },
+              { label: lang === "fr" ? "➕ Autres extras" : "➕ Other extras", value: sum(otherCharges), color: "var(--muted)" },
+              { label: lang === "fr" ? "Total facturé folio" : "Total folio billed", value: sum(periodCharges), color: "var(--text)", bold: true },
+            ].map(row => (
+              <div key={row.label} className="flex items-center justify-between py-2"
+                style={{ borderBottom: "1px solid var(--border)" }}>
+                <span className="text-sm" style={{ color: "var(--muted)" }}>{row.label}</span>
+                <span className={`text-sm ${row.bold ? "font-black" : "font-bold"}`} style={{ color: row.color }}>
+                  {loading ? "—" : fmt(row.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card p-5">
+          <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>
+            {lang === "fr" ? "Encaissements par Méthode" : "Collections by Method"}
+          </h3>
+          <div className="space-y-3">
+            {byMethod.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
+                {lang === "fr" ? "Aucun paiement sur la période" : "No payments in period"}
+              </p>
+            ) : byMethod.map(([method, total]) => (
+              <div key={method} className="flex items-center justify-between py-2"
+                style={{ borderBottom: "1px solid var(--border)" }}>
+                <span className="text-sm" style={{ color: "var(--muted)" }}>💳 {method}</span>
+                <span className="text-sm font-bold" style={{ color: "#059669" }}>{fmt(total)}</span>
+              </div>
+            ))}
+            {byMethod.length > 0 && (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm font-bold" style={{ color: "var(--text)" }}>Total</span>
+                <span className="text-sm font-black" style={{ color: "#059669" }}>{fmt(collected)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      </>)}
+
+      {tab === "rooms" && (<>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {[
+          { label: t.fo_occ_rate, value: `${occRate}%`, icon: "🏨", gradient: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", note: `${occupied}/${totalRooms}` },
+          { label: lang === "fr" ? "Nuits Vendues" : "Nights Sold", value: String(roomCharges.length), icon: "🌙", gradient: "linear-gradient(135deg,#059669,#10b981)", note: lang === "fr" ? "Sur la période" : "In period" },
+          { label: lang === "fr" ? "Revenu Chambres" : "Room Revenue", value: fmt(sum(roomCharges)), icon: "💰", gradient: "linear-gradient(135deg,#7c3aed,#8b5cf6)", note: lang === "fr" ? "Hébergement seul" : "Lodging only" },
+        ].map(k => (
+          <div key={k.label} className="card p-5 relative overflow-hidden" style={{ background: k.gradient, border: "none" }}>
+            <div className="absolute -right-3 -bottom-3 text-5xl opacity-20">{k.icon}</div>
+            <div className="text-white/70 text-xs font-semibold mb-1">{k.label}</div>
+            <div className="text-2xl font-black text-white mb-0.5">{loading ? "—" : k.value}</div>
+            <div className="text-white/60 text-xs">{k.note}</div>
+          </div>
+        ))}
+      </div>
+      <div className="card overflow-hidden" style={{ padding: 0 }}>
+        <table className="w-full text-sm">
+          <thead style={{ background: "var(--input-bg)", borderBottom: "1px solid var(--border)" }}>
+            <tr>
+              {[lang === "fr" ? "Chambre" : "Room", "Type", lang === "fr" ? "Statut" : "Status",
+                lang === "fr" ? "Prix/Nuit" : "Price/Night", lang === "fr" ? "Nuits" : "Nights",
+                lang === "fr" ? "Revenu Chambre" : "Room Revenue", "Extras", "Total"].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {roomStats.map(({ room: r, nights, roomRevenue, extras }, i) => {
+              const st = ROOM_STATUS_META[r.status] ?? { color: "var(--muted)", en: r.status, fr: r.status };
+              return (
+                <tr key={r.id} style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? undefined : "var(--input-bg)" }}>
+                  <td className="px-4 py-2.5 font-bold" style={{ color: "var(--text)" }}>{r.room_number}</td>
+                  <td className="px-4 py-2.5 text-xs" style={{ color: "var(--muted)" }}>{r.room_type}</td>
+                  <td className="px-4 py-2.5">
+                    <span className="pill" style={{ background: st.color + "18", color: st.color }}>
+                      {lang === "fr" ? st.fr : st.en}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-xs" style={{ color: "var(--muted)" }}>{fmt(Number(r.price_per_night))}</td>
+                  <td className="px-4 py-2.5 font-semibold" style={{ color: "var(--text)" }}>{nights}</td>
+                  <td className="px-4 py-2.5 font-semibold" style={{ color: "var(--blue)" }}>{fmt(roomRevenue)}</td>
+                  <td className="px-4 py-2.5 text-xs" style={{ color: "#d97706" }}>{extras > 0 ? fmt(extras) : "—"}</td>
+                  <td className="px-4 py-2.5 font-black" style={{ color: "var(--text)" }}>{fmt(roomRevenue + extras)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{ background: "var(--input-bg)", borderTop: "2px solid var(--border)" }}>
+              <td colSpan={4} className="px-4 py-3 font-bold text-right text-sm" style={{ color: "var(--muted)" }}>
+                {lang === "fr" ? "Totaux" : "Totals"}
+              </td>
+              <td className="px-4 py-3 font-black text-sm" style={{ color: "var(--text)" }}>{roomCharges.length}</td>
+              <td className="px-4 py-3 font-black text-sm" style={{ color: "var(--blue)" }}>{fmt(sum(roomCharges))}</td>
+              <td className="px-4 py-3 font-black text-sm" style={{ color: "#d97706" }}>
+                {fmt(roomStats.reduce((s, x) => s + x.extras, 0))}
+              </td>
+              <td className="px-4 py-3 font-black text-sm" style={{ color: "var(--text)" }}>
+                {fmt(roomStats.reduce((s, x) => s + x.roomRevenue + x.extras, 0))}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      </>)}
+
+      {(tab === "restaurant" || tab === "bar") && (() => {
+        const list = tab === "restaurant" ? restaurantCharges : barCharges;
+        const icon = tab === "restaurant" ? "🍽️" : "🍹";
+        const avg = list.length ? sum(list) / list.length : 0;
+        return (<>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {[
+              { label: lang === "fr" ? "Ventes Totales" : "Total Sales", value: fmt(sum(list)), icon: "💰", gradient: "linear-gradient(135deg,#059669,#10b981)", note: `${from} → ${to}` },
+              { label: lang === "fr" ? "Nombre de Ventes" : "Sales Count", value: String(list.length), icon, gradient: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", note: lang === "fr" ? "Postes facturés" : "Charges posted" },
+              { label: lang === "fr" ? "Panier Moyen" : "Average Sale", value: fmt(avg), icon: "📊", gradient: "linear-gradient(135deg,#7c3aed,#8b5cf6)", note: lang === "fr" ? "Par vente" : "Per sale" },
+            ].map(k => (
+              <div key={k.label} className="card p-5 relative overflow-hidden" style={{ background: k.gradient, border: "none" }}>
+                <div className="absolute -right-3 -bottom-3 text-5xl opacity-20">{k.icon}</div>
+                <div className="text-white/70 text-xs font-semibold mb-1">{k.label}</div>
+                <div className="text-2xl font-black text-white mb-0.5">{loading ? "—" : k.value}</div>
+                <div className="text-white/60 text-xs">{k.note}</div>
+              </div>
+            ))}
+          </div>
+          <div className="card overflow-hidden" style={{ padding: 0 }}>
+            <table className="w-full text-sm">
+              <thead style={{ background: "var(--input-bg)", borderBottom: "1px solid var(--border)" }}>
+                <tr>
+                  {["Date", lang === "fr" ? "Chambre" : "Room", "Réf", lang === "fr" ? "Libellé" : "Item",
+                    "Description", lang === "fr" ? "Montant" : "Amount"].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {list.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-12" style={{ color: "var(--muted)" }}>
+                    {icon} {lang === "fr" ? "Aucune vente sur la période" : "No sales in period"}
+                  </td></tr>
+                ) : list.map((c, i) => (
+                  <tr key={c.id} style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? undefined : "var(--input-bg)" }}>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: "var(--muted)" }}>{String(c.date).slice(0, 10)}</td>
+                    <td className="px-4 py-2.5 font-bold" style={{ color: "var(--text)" }}>{c.room_number || "—"}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs" style={{ color: "var(--muted)" }}>{c.ref_number}</td>
+                    <td className="px-4 py-2.5 font-medium" style={{ color: "var(--text)" }}>{c.particular}</td>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: "var(--muted)" }}>{c.description || "—"}</td>
+                    <td className="px-4 py-2.5 font-bold" style={{ color: "#059669" }}>{fmt(Number(c.amount))}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {list.length > 0 && (
+                <tfoot>
+                  <tr style={{ background: "var(--input-bg)", borderTop: "2px solid var(--border)" }}>
+                    <td colSpan={5} className="px-4 py-3 font-bold text-right text-sm" style={{ color: "var(--muted)" }}>Total</td>
+                    <td className="px-4 py-3 font-black text-sm" style={{ color: "#059669" }}>{fmt(sum(list))}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </>);
+      })()}
     </div>
   );
 }
