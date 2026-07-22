@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -539,6 +540,7 @@ function IssueModal({ rooms, users, lang, onClose, onIssued }: {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function KeyCardsPage() {
   const { t, lang } = useI18n();
+  const { can } = usePermissions();
   const [cards, setCards] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -590,11 +592,13 @@ export default function KeyCardsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)" }}>{t.key_card_management}</h2>
-        <button onClick={() => setShowIssue(true)}
-          className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-colors flex items-center gap-2"
-          style={{ background: "var(--accent)" }}>
-          🔑 {l("Issue New Card", "Émettre une Carte")}
-        </button>
+        {can("kc.issue") && (
+          <button onClick={() => setShowIssue(true)}
+            className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-colors flex items-center gap-2"
+            style={{ background: "var(--accent)" }}>
+            🔑 {l("Issue New Card", "Émettre une Carte")}
+          </button>
+        )}
       </div>
 
       {/* Stats row */}
@@ -779,35 +783,43 @@ export default function KeyCardsPage() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {c.status === "active" && (
                         <>
-                          <button onClick={() => setExtendCard(c)}
-                            className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-blue-50"
-                            style={{ borderColor: "#93c5fd", color: "#1565c0" }}>
-                            {l("Extend", "Prolonger")}
-                          </button>
-                          <button onClick={() => api.revokeCard(c.id).then(load)}
-                            className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-gray-50"
-                            style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-                            {l("Deactivate", "Désactiver")}
-                          </button>
-                          <button onClick={() => api.reportLost(c.id).then(load)}
-                            className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-red-50"
-                            style={{ borderColor: "#fca5a5", color: "#dc2626" }}>
-                            {l("Lost", "Perdue")}
-                          </button>
+                          {can("kc.issue") && (
+                            <button onClick={() => setExtendCard(c)}
+                              className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-blue-50"
+                              style={{ borderColor: "#93c5fd", color: "#1565c0" }}>
+                              {l("Extend", "Prolonger")}
+                            </button>
+                          )}
+                          {can("kc.revoke") && (
+                            <button onClick={() => api.revokeCard(c.id).then(load)}
+                              className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-gray-50"
+                              style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
+                              {l("Deactivate", "Désactiver")}
+                            </button>
+                          )}
+                          {can("kc.report_lost") && (
+                            <button onClick={() => api.reportLost(c.id).then(load)}
+                              className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-red-50"
+                              style={{ borderColor: "#fca5a5", color: "#dc2626" }}>
+                              {l("Lost", "Perdue")}
+                            </button>
+                          )}
                         </>
                       )}
-                      {(c.status === "inactive" || c.status === "expired") && (
+                      {(c.status === "inactive" || c.status === "expired") && can("kc.issue") && (
                         <button onClick={() => setExtendCard(c)}
                           className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-green-50"
                           style={{ borderColor: "#6ee7b7", color: "#059669" }}>
                           {l("Reactivate", "Réactiver")}
                         </button>
                       )}
-                      <button onClick={() => setLogsCard(c)}
-                        className="text-xs px-2 py-1 rounded-lg transition-colors hover:bg-gray-50"
-                        style={{ color: "var(--muted)", border: "1px solid var(--border)" }}>
-                        {t.logs}
-                      </button>
+                      {can("kc.access_logs") && (
+                        <button onClick={() => setLogsCard(c)}
+                          className="text-xs px-2 py-1 rounded-lg transition-colors hover:bg-gray-50"
+                          style={{ color: "var(--muted)", border: "1px solid var(--border)" }}>
+                          {t.logs}
+                        </button>
+                      )}
                     </div>
                     {c.notes && (
                       <div className="text-xs mt-1 truncate max-w-[200px]" style={{ color: "var(--muted)" }}

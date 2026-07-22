@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { Guest } from "@/lib/types";
 import { Modal, ConfirmDialog, StatCardGrid, SearchInput, SegmentedControl } from "@/components/ui";
+import { usePermissions } from "@/lib/permissions";
 
 const EMPTY = {
   first_name: "", last_name: "", email: "", phone: "", id_type: "",
@@ -22,6 +23,7 @@ function avatarColor(name: string) {
 
 export default function GuestsPage() {
   const { t, lang } = useI18n();
+  const { can } = usePermissions();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -140,11 +142,13 @@ export default function GuestsPage() {
             {guests.length} {t.guests_total.toLowerCase()}
           </p>
         </div>
-        <button onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", boxShadow: "0 4px 14px rgba(59,91,219,0.25)" }}>
-          + {t.new_guest}
-        </button>
+        {can("guests.create") && (
+          <button onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", boxShadow: "0 4px 14px rgba(59,91,219,0.25)" }}>
+            + {t.new_guest}
+          </button>
+        )}
       </div>
 
       {/* Stats row */}
@@ -321,12 +325,16 @@ export default function GuestsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(g)}
-                        className="text-xs px-2.5 py-1 rounded-lg border font-medium hover:bg-gray-50 transition-colors"
-                        style={{ borderColor: "var(--border)", color: "#1565c0" }}>{t.edit}</button>
-                      <button onClick={() => setConfirmDelete(g)}
-                        className="text-xs px-2.5 py-1 rounded-lg border font-medium hover:bg-red-50 transition-colors"
-                        style={{ borderColor: "#fca5a5", color: "#dc2626" }}>{t.delete}</button>
+                      {can("guests.edit") && (
+                        <button onClick={() => openEdit(g)}
+                          className="text-xs px-2.5 py-1 rounded-lg border font-medium hover:bg-gray-50 transition-colors"
+                          style={{ borderColor: "var(--border)", color: "#1565c0" }}>{t.edit}</button>
+                      )}
+                      {can("guests.delete") && (
+                        <button onClick={() => setConfirmDelete(g)}
+                          className="text-xs px-2.5 py-1 rounded-lg border font-medium hover:bg-red-50 transition-colors"
+                          style={{ borderColor: "#fca5a5", color: "#dc2626" }}>{t.delete}</button>
+                      )}
                     </div>
                   </td>
                 </tr>

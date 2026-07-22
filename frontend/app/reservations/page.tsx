@@ -7,6 +7,7 @@ import type { Reservation, Guest, Room } from "@/lib/types";
 import { ConfirmDialog, SearchInput } from "@/components/ui";
 import GuestProfileModal from "@/components/GuestProfileModal";
 import { useProperty, parseFacilities, getFloors } from "@/lib/property-context";
+import { usePermissions } from "@/lib/permissions";
 
 // HotelPro semantic palette — theme-aware via CSS variables
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -1645,6 +1646,7 @@ function CheckInModal({ reservation, room, guest, onClose, onDone }: {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 function ReservationsInner() {
   const { t, lang } = useI18n();
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get("status") || "";
   const autoFolioId = searchParams.get("folio");
@@ -1779,11 +1781,13 @@ function ReservationsInner() {
             {departingToday > 0 && <span>📤 {departingToday} {t.checkout_today_stat}</span>}
           </p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", boxShadow: "0 4px 14px rgba(59,91,219,0.25)" }}>
-          + {t.new_reservation}
-        </button>
+        {can("fo.res.create") && (
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", boxShadow: "0 4px 14px rgba(59,91,219,0.25)" }}>
+            + {t.new_reservation}
+          </button>
+        )}
       </div>
 
       {actionError && (
@@ -1910,35 +1914,43 @@ function ReservationsInner() {
                     <div className="flex items-center gap-1.5">
                       {r.status === "confirmed" && (
                         <>
-                          <button onClick={() => { setActionError(""); setCheckinRes(r); }}
-                            className="text-xs px-2.5 py-1 rounded-lg text-white font-semibold"
-                            style={{ background: "#059669" }}>
-                            {t.check_in_action}
-                          </button>
-                          <button onClick={() => setConfirmAction({ res: r, action: "no_show" })}
-                            className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
-                            style={{ borderColor: "#fcd34d", color: "#d97706" }}>
-                            {t.no_show_btn}
-                          </button>
-                          <button onClick={() => setConfirmAction({ res: r, action: "cancel" })}
-                            className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
-                            style={{ borderColor: "#fca5a5", color: "#dc2626" }}>
-                            {t.cancel_res_btn}
-                          </button>
+                          {can("fo.checkin") && (
+                            <button onClick={() => { setActionError(""); setCheckinRes(r); }}
+                              className="text-xs px-2.5 py-1 rounded-lg text-white font-semibold"
+                              style={{ background: "#059669" }}>
+                              {t.check_in_action}
+                            </button>
+                          )}
+                          {can("fo.res.edit") && (
+                            <>
+                              <button onClick={() => setConfirmAction({ res: r, action: "no_show" })}
+                                className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
+                                style={{ borderColor: "#fcd34d", color: "#d97706" }}>
+                                {t.no_show_btn}
+                              </button>
+                              <button onClick={() => setConfirmAction({ res: r, action: "cancel" })}
+                                className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
+                                style={{ borderColor: "#fca5a5", color: "#dc2626" }}>
+                                {t.cancel_res_btn}
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
-                      {r.status === "checked_in" && (
+                      {r.status === "checked_in" && can("fo.checkout") && (
                         <button onClick={() => doCheckOut(r.id)}
                           className="text-xs px-2.5 py-1 rounded-lg text-white font-semibold"
                           style={{ background: "#d97706" }}>
                           {t.check_out_btn}
                         </button>
                       )}
-                      <button onClick={() => setFolio(r)}
-                        className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
-                        style={{ borderColor: "var(--border)", color: "var(--blue)" }}>
-                        {t.folio}
-                      </button>
+                      {can(["fo.folio.view", "fo.folio.charge", "fo.folio.settle"]) && (
+                        <button onClick={() => setFolio(r)}
+                          className="text-xs px-2.5 py-1 rounded-lg font-semibold border"
+                          style={{ borderColor: "var(--border)", color: "var(--blue)" }}>
+                          {t.folio}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { Modal, StatCardGrid, EmptyState, SkeletonCards } from "@/components/ui";
+import { usePermissions } from "@/lib/permissions";
 
 const TASK_TYPES: Record<string, { tKey: string; icon: string }> = {
   cleaning:   { tKey: "task_type_cleaning",   icon: "🧹" },
@@ -29,6 +30,9 @@ function fmtDate(d: string) {
 }
 
 function TaskCard({ task, t, users, onUpdated }: { task: any; t: any; users: any[]; onUpdated: () => void }) {
+  const { can } = usePermissions();
+  const canAssign = can(["hk.tasks.assign", "hk.assignment"]);
+  const canComplete = can(["hk.tasks.complete", "hk.tasks.assign"]);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [assignee, setAssignee] = useState(String(task.assigned_to || ""));
@@ -75,7 +79,9 @@ function TaskCard({ task, t, users, onUpdated }: { task: any; t: any; users: any
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: st.bg, color: st.color }}>
             {(t as any)[st.tKey]}
           </span>
-          <button onClick={del} className="text-xs px-2 py-1 rounded border" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>✕</button>
+          {canAssign && (
+            <button onClick={del} className="text-xs px-2 py-1 rounded border" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>✕</button>
+          )}
         </div>
       </div>
 
@@ -84,14 +90,18 @@ function TaskCard({ task, t, users, onUpdated }: { task: any; t: any; users: any
         {task.assignee_name ? (
           <span className="flex items-center gap-1">
             👤 {task.assignee_name}
-            <button onClick={() => setEditing(e => !e)} className="underline" style={{ color: "#3b82f6" }}>
-              {t.hk_change_assignee}
-            </button>
+            {canAssign && (
+              <button onClick={() => setEditing(e => !e)} className="underline" style={{ color: "#3b82f6" }}>
+                {t.hk_change_assignee}
+              </button>
+            )}
           </span>
-        ) : (
+        ) : canAssign ? (
           <button onClick={() => setEditing(e => !e)} className="underline" style={{ color: "#f59e0b" }}>
             + {t.hk_assign_staff_btn}
           </button>
+        ) : (
+          <span>👤 {t.hk_unassigned}</span>
         )}
         {task.notes && <span>📝 {task.notes}</span>}
         {task.completed_at && <span>✅ {new Date(task.completed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
@@ -108,7 +118,7 @@ function TaskCard({ task, t, users, onUpdated }: { task: any; t: any; users: any
         </div>
       )}
 
-      {task.status !== "done" && task.status !== "skipped" && (
+      {canComplete && task.status !== "done" && task.status !== "skipped" && (
         <div className="flex gap-2 pt-2">
           {task.status === "pending" && (
             <button onClick={() => setStatus("in_progress")} disabled={saving}
@@ -133,7 +143,7 @@ function TaskCard({ task, t, users, onUpdated }: { task: any; t: any; users: any
           )}
         </div>
       )}
-      {(task.status === "done" || task.status === "skipped") && (
+      {canComplete && (task.status === "done" || task.status === "skipped") && (
         <button onClick={() => setStatus("pending")} disabled={saving}
           className="text-xs px-3 py-1.5 rounded-lg font-semibold border mt-2"
           style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
@@ -211,6 +221,7 @@ function NewTaskModal({ t, users, rooms, onClose, onCreated }: { t: any; users: 
 
 export default function HousekeepingTasksPage() {
   const { t } = useI18n();
+  const { can } = usePermissions();
   const [tasks, setTasks] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -260,7 +271,9 @@ export default function HousekeepingTasksPage() {
           <h1 className="page-title">{t.nav_task_list}</h1>
           <p className="page-subtitle">{tasks.length} {t.task_pending.toLowerCase()} {counts.pending} · {t.task_in_progress.toLowerCase()} {counts.in_progress} · {t.task_done.toLowerCase()} {counts.done}</p>
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary">+ {t.new_task}</button>
+        {can(["hk.tasks.assign", "hk.assignment"]) && (
+          <button onClick={() => setShowNew(true)} className="btn-primary">+ {t.new_task}</button>
+        )}
       </div>
 
       {/* KPI gradient cards */}

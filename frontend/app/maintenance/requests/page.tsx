@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { Modal, EmptyState, SkeletonCards } from "@/components/ui";
+import { usePermissions } from "@/lib/permissions";
 
 const CATEGORIES: Record<string, { tKey: string; icon: string; color: string }> = {
   plumbing:   { tKey: "wo_cat_plumbing",   icon: "🚿", color: "#0891b2" },
@@ -36,6 +37,8 @@ function age(createdAt: string) {
 }
 
 function WOCard({ wo, t, users, onUpdated }: { wo: any; t: any; users: any[]; onUpdated: () => void }) {
+  const { can } = usePermissions();
+  const canWork = can(["maint.edit", "maint.close"]);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const cat = CATEGORIES[wo.category] ?? CATEGORIES.general;
@@ -89,9 +92,11 @@ function WOCard({ wo, t, users, onUpdated }: { wo: any; t: any; users: any[]; on
               style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
               {expanded ? "▲" : "▼"}
             </button>
-            <button onClick={del}
-              className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs"
-              style={{ borderColor: "var(--border)", color: "var(--muted)" }}>✕</button>
+            {can("maint.delete") && (
+              <button onClick={del}
+                className="w-7 h-7 rounded-lg border flex items-center justify-center text-xs"
+                style={{ borderColor: "var(--border)", color: "var(--muted)" }}>✕</button>
+            )}
           </div>
         </div>
 
@@ -115,7 +120,7 @@ function WOCard({ wo, t, users, onUpdated }: { wo: any; t: any; users: any[]; on
           </div>
         )}
 
-        {wo.status !== "done" && wo.status !== "cancelled" && (
+        {canWork && wo.status !== "done" && wo.status !== "cancelled" && (
           <div className="flex flex-wrap gap-2 pt-1">
             {wo.status === "open" && (
               <button onClick={() => setStatus("in_progress")} disabled={saving}
@@ -153,7 +158,7 @@ function WOCard({ wo, t, users, onUpdated }: { wo: any; t: any; users: any[]; on
             )}
           </div>
         )}
-        {(wo.status === "done" || wo.status === "cancelled") && (
+        {canWork && (wo.status === "done" || wo.status === "cancelled") && (
           <button onClick={() => setStatus("open")} disabled={saving}
             className="text-xs px-3 py-1.5 rounded-lg font-semibold border"
             style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
@@ -283,6 +288,7 @@ function NewWOModal({ t, users, rooms, onClose, onCreated }: {
 
 export default function MaintenanceRequestsPage() {
   const { t } = useI18n();
+  const { can } = usePermissions();
   const [requests, setRequests] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -328,7 +334,9 @@ export default function MaintenanceRequestsPage() {
             {urgent > 0 && <span style={{ color: "#dc2626" }}> · ⚠️ {urgent} {(t.wo_pri_urgent).toLowerCase()}</span>}
           </p>
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary">+ {t.new_work_order}</button>
+        {can("maint.create") && (
+          <button onClick={() => setShowNew(true)} className="btn-primary">+ {t.new_work_order}</button>
+        )}
       </div>
 
       {/* Gradient KPI status cards */}
