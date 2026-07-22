@@ -185,7 +185,7 @@ export default function ReportPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 print-2col">
         {/* Room status breakdown */}
         <div className="card p-5">
           <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>{t.fo_room_status_bkdn}</h3>
@@ -239,7 +239,7 @@ export default function ReportPage() {
       </div>
 
       {/* Pending issues + Revenue summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 print-2col">
         <div className="card p-5">
           <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>{t.fo_pending_issues}</h3>
           <div className="space-y-3">
