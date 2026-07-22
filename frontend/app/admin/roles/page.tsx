@@ -233,19 +233,20 @@ export default function RolesPage() {
         </div>
       )}
 
-      <div className="flex gap-5 items-start">
-        {/* Role list panel */}
-        <div className="card shrink-0 overflow-hidden" style={{ width: 230, padding: 0 }}>
+      <div className="flex flex-col lg:flex-row gap-5 items-stretch lg:items-start">
+        {/* Role list panel — vertical on desktop, horizontal scroll strip on mobile */}
+        <div className="card shrink-0 overflow-hidden w-full lg:w-[230px]" style={{ padding: 0 }}>
           <div className="px-4 py-2.5 border-b text-xs font-semibold uppercase tracking-wider"
             style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--input-bg)" }}>
             {t.nav_roles}
           </div>
+          <div className="flex overflow-x-auto lg:block">
           {roles.map(role => {
             const isActive = selected?.id === role.id;
             const g = role.permissions.length;
             return (
               <button key={role.id} onClick={() => selectRole(role)}
-                className="w-full text-left px-4 py-3 transition-colors border-b"
+                className="text-left px-4 py-3 transition-colors border-b border-r lg:border-r-0 shrink-0 w-44 lg:w-full"
                 style={{
                   borderColor: "var(--border)",
                   background: isActive ? role.color + "10" : undefined,
@@ -273,13 +274,14 @@ export default function RolesPage() {
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* Permissions matrix */}
         {selected && (
-          <div className="flex-1 card overflow-hidden" style={{ padding: 0 }}>
+          <div className="flex-1 card overflow-hidden w-full min-w-0" style={{ padding: 0 }}>
             {/* Role info bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b"
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-4 border-b"
               style={{ borderColor: "var(--border)", borderLeft: `4px solid ${selected.color}` }}>
               <div>
                 <div className="flex items-center gap-2">
@@ -389,10 +391,10 @@ export default function RolesPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2">
                       {group.permissions.map((perm, idx) => (
                         <div key={perm.key}
-                          className="flex items-center gap-3 px-6 py-2.5 border-b border-r"
+                          className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b sm:border-r"
                           style={{ borderColor: "var(--border)", background: idx % 2 === 0 ? undefined : "var(--input-bg)" }}>
                           <PermCell
                             granted={draftPerms.includes(perm.key)}

@@ -1453,14 +1453,14 @@ export default function SettingsPage() {
   return (
     <div>
       <h2 className="mb-5" style={{ fontSize: 20, fontWeight: 700, color: "var(--text)" }}>{t.settings}</h2>
-      <div className="flex gap-6 items-start">
-        {/* Left sidebar */}
-        <nav className="shrink-0 w-52 card space-y-0.5" style={{ padding: "8px" }}>
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-stretch lg:items-start">
+        {/* Left sidebar — horizontal scroll strip on mobile */}
+        <nav className="shrink-0 card flex overflow-x-auto gap-1 lg:block lg:w-52 lg:space-y-0.5" style={{ padding: "8px" }}>
           {TABS.map(tb => {
             const isActive = tab === tb.key;
             return (
               <button key={tb.key} onClick={() => setTab(tb.key)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-colors"
+                className="shrink-0 whitespace-nowrap lg:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-colors"
                 style={isActive
                   ? { background: "#e3f2fd", color: "var(--blue)" }
                   : { color: "var(--muted)" }}>

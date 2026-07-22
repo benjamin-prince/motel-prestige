@@ -48,14 +48,14 @@ export default function ReferencePage() {
       {loading ? (
         <SkeletonCards count={9} height={64} className="grid grid-cols-1 sm:grid-cols-3 gap-4" />
       ) : (
-        <div className="flex gap-5">
-          {/* Groups sidebar */}
-          <div className="w-56 shrink-0 space-y-1">
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* Groups sidebar — horizontal scroll strip on mobile */}
+          <div className="flex overflow-x-auto gap-1 lg:block lg:w-56 lg:space-y-1 shrink-0">
             {groups.map(g => {
               const cnt = lookups.filter(l => l.group === g).length;
               return (
                 <button key={g} onClick={() => setActiveGroup(g)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-all"
+                  className="shrink-0 whitespace-nowrap lg:w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-left transition-all"
                   style={activeGroup === g
                     ? { background: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", color: "#fff" }
                     : { color: "var(--text)", background: "transparent" }}>
