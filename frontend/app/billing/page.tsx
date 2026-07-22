@@ -64,7 +64,7 @@ export default function BillingPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         {[
           { label: lang === "fr" ? "Total Facturé" : "Total Invoiced", value: totalInvoiced, gradient: "linear-gradient(135deg,#3b5bdb,#4c6ef5)", icon: "📄" },
           { label: t.amount_paid,  value: totalPaid,     gradient: "linear-gradient(135deg,#059669,#10b981)", icon: "✅" },

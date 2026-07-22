@@ -54,7 +54,7 @@ export default function Header({ user, onSignOut, onMenu }: Props) {
   const icon = current ? (TYPE_ICON[current.type] || "🏢") : "🏢";
 
   return (
-    <header className="h-14 flex items-center justify-between px-5 shrink-0"
+    <header className="h-14 flex items-center justify-between px-3 sm:px-5 shrink-0"
       style={{ background: "var(--card)", borderBottom: "1px solid var(--border)" }}>
 
       <div className="flex items-center gap-3">
@@ -74,12 +74,12 @@ export default function Header({ user, onSignOut, onMenu }: Props) {
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-colors hover:bg-gray-100"
           style={{ border: "1px solid var(--border)" }}>
           <span style={{ fontSize: 18 }}>{icon}</span>
-          <div className="text-left">
-            <div className="text-sm font-bold leading-tight" style={{ color: "var(--text)" }}>
+          <div className="text-left min-w-0">
+            <div className="text-sm font-bold leading-tight truncate max-w-[110px] sm:max-w-[200px]" style={{ color: "var(--text)" }}>
               {current?.name ?? "—"}
             </div>
             {current?.city && (
-              <div className="text-xs leading-tight capitalize" style={{ color: "var(--muted)" }}>
+              <div className="hidden sm:block text-xs leading-tight capitalize" style={{ color: "var(--muted)" }}>
                 {current.city}{current.country ? `, ${current.country}` : ""}
               </div>
             )}
@@ -152,7 +152,7 @@ export default function Header({ user, onSignOut, onMenu }: Props) {
       </div>
 
       {/* Right: search + lang + bell + user */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5 sm:gap-4">
         {/* Quick search → command palette */}
         <button onClick={openCommandPalette} title={`${t.cmd_quick_search} (⌘K)`}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
@@ -174,7 +174,7 @@ export default function Header({ user, onSignOut, onMenu }: Props) {
         </button>
 
         {/* Language switcher */}
-        <div className="flex items-center gap-1 rounded-lg p-0.5"
+        <div className="hidden sm:flex items-center gap-1 rounded-lg p-0.5"
           style={{ background: "var(--input-bg)", border: "1px solid var(--border)" }}>
           {(["en", "fr"] as const).map(l => (
             <button key={l} onClick={() => setLang(l)}
@@ -202,7 +202,7 @@ export default function Header({ user, onSignOut, onMenu }: Props) {
             style={{ background: "var(--blue)" }}>
             {initials}
           </div>
-          <div>
+          <div className="hidden md:block">
             <div className="text-xs font-semibold" style={{ color: "var(--text)" }}>{displayName}</div>
             <div className="text-xs" style={{ color: "var(--muted)" }}>{displayEmail}</div>
           </div>

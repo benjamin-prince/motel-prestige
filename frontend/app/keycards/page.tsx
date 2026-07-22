@@ -405,7 +405,7 @@ function IssueModal({ rooms, users, lang, onClose, onIssued }: {
                         </span>
                       )}
                     </label>
-                    <div className="grid grid-cols-3 gap-2 mt-1 max-h-48 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1 max-h-48 overflow-y-auto pr-1">
                       {rooms.map(r => {
                         const selected = roomIds.includes(String(r.id));
                         return (
@@ -433,7 +433,7 @@ function IssueModal({ rooms, users, lang, onClose, onIssued }: {
                       {l("Access Zones", "Zones d'Accès")}
                       {isMaster && <span className="ml-1 font-semibold" style={{ color: "#dc2626" }}>*</span>}
                     </label>
-                    <div className="grid grid-cols-3 gap-2 mt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                       {ZONES.map(z => {
                         const active = zones.includes(z.key);
                         return (
@@ -598,7 +598,7 @@ export default function KeyCardsPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="card col-span-1 text-center" style={{ padding: "14px 10px" }}>
           <div className="text-2xl font-black" style={{ color: "var(--text)" }}>{stats.total}</div>
           <div className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{l("Active", "Actives")}</div>

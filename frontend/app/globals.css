@@ -261,3 +261,15 @@ button:disabled {
 .pill-bad   { background: var(--bad-bg);   color: var(--bad); }
 .pill-info  { background: var(--info-bg);  color: var(--info); }
 .pill-slate { background: var(--input-bg); color: var(--muted); }
+
+/* ── Mobile: wide content scrolls inside its own box, never the page ── */
+@media (max-width: 767px) {
+  main table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  main table th, main table td { white-space: nowrap; }
+  .card { border-radius: 10px; }
+}

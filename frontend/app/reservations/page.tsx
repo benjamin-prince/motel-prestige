@@ -558,7 +558,7 @@ function ReservationForm({
                   </Field>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label={t.check_in}>
                     <input type="date" value={form.check_in_date} onChange={e => set("check_in_date")(e.target.value)} className="field-input" />
                   </Field>
@@ -609,7 +609,7 @@ function ReservationForm({
                   </>
                 )}
               </Field>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([[t.adults, "adults"], [t.children, "children"], [t.infants, "infants"], [t.extra_bed, "extra_bed"]] as [string, string][]).map(([l, k]) => (
                   <Field key={k} label={l}>
                     <input type="number" min={0} value={(form as any)[k]} onChange={e => set(k)(e.target.value)} className="field-input" />
@@ -979,7 +979,7 @@ function FolioModal({ reservation, onClose }: { reservation: Reservation; onClos
               {/* Charge form */}
               <div>
                 <div className="section-title">{t.folio_header}</div>
-                <form onSubmit={handleAddCharge} className="grid grid-cols-3 gap-3">
+                <form onSubmit={handleAddCharge} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label={t.folio_label}><input readOnly value={`#${reservation.reservation_number}`} className="field-input" /></Field>
                   <Field label={t.payment_type}>
                     <select value={settle.payment_type} onChange={e => setSettle(s => ({ ...s, payment_type: e.target.value }))} className="field-input">

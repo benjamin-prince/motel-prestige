@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: motel_prestige
+      TZ: America/New_York
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/motel_prestige
+      TZ: America/New_York
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    # No NEXT_PUBLIC_API_URL: the frontend derives the API address from the
+    # host it was loaded from, so LAN clients reach this server's backend.
+    environment: {}
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

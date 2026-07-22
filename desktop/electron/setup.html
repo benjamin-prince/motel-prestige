@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Motel Prestige — Configuration</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         background: linear-gradient(135deg, #1e2532 0%, #2b3447 100%); color: #e8ecf3; }
+  .card { width: 440px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 20px; padding: 40px 36px; backdrop-filter: blur(6px); }
+  .logo { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg,#3b5bdb,#4c6ef5);
+          display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 18px; }
+  h1 { font-size: 20px; font-weight: 800; text-align: center; }
+  .sub { font-size: 13px; color: #9aa5b8; text-align: center; margin: 6px 0 26px; line-height: 1.5; }
+  label { display: block; font-size: 12px; font-weight: 700; color: #9aa5b8; text-transform: uppercase;
+          letter-spacing: 0.06em; margin-bottom: 8px; }
+  input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+          background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; outline: none; }
+  input:focus { border-color: #4c6ef5; }
+  .hint { font-size: 11px; color: #6f7a8e; margin-top: 6px; }
+  button { width: 100%; margin-top: 22px; padding: 13px; border: none; border-radius: 12px; cursor: pointer;
+           background: linear-gradient(135deg,#3b5bdb,#4c6ef5); color: #fff; font-size: 15px; font-weight: 700; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .msg { margin-top: 14px; font-size: 13px; text-align: center; min-height: 18px; }
+  .msg.err { color: #ff8787; }
+  .msg.ok { color: #69db7c; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🏨</div>
+    <h1>Motel Prestige</h1>
+    <p class="sub">Entrez l'adresse du serveur PMS.<br/>Enter the PMS server address.</p>
+    <label for="server">Serveur PMS / PMS Server</label>
+    <input id="server" placeholder="192.168.1.10" autofocus />
+    <p class="hint">Adresse IP du serveur de réception — ex. 192.168.1.10 (les opérations se font sur le réseau local)</p>
+    <div class="checks" id="checks" style="display:none">
+      <div class="check"><span class="dot" id="dot-api"></span><span>API</span><span class="state" id="state-api"></span></div>
+      <div class="check"><span class="dot" id="dot-db"></span><span>Base de données / Database</span><span class="state" id="state-db"></span></div>
+    </div>
+    <button id="connect">Vérifier &amp; se connecter / Verify &amp; Connect</button>
+    <p class="msg" id="msg"></p>
+  </div>
+<style>
+  .checks { margin-top: 18px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            padding: 12px 14px; background: rgba(0,0,0,0.18); }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 5px 0; }
+  .check .state { margin-left: auto; font-size: 12px; color: #9aa5b8; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #6f7a8e; }
+  .dot.ok { background: #69db7c; }
+  .dot.err { background: #ff8787; }
+</style>
+<script>
+  const input = document.getElementById("server");
+  const btn = document.getElementById("connect");
+  const msg = document.getElementById("msg");
+  const checks = document.getElementById("checks");
+
+  window.motel.getServerUrl().then(url => { if (url) input.value = url; });
+
+  function setCheck(name, ok) {
+    document.getElementById(`dot-${name}`).className = `dot ${ok ? "ok" : "err"}`;
+    document.getElementById(`state-${name}`).textContent = ok ? "OK" : "✕";
+  }
+
+  async function connect() {
+    const value = input.value.trim();
+    if (!value) return;
+    btn.disabled = true;
+    msg.className = "msg";
+    msg.textContent = "Vérification… / Checking…";
+    checks.style.display = "block";
+
+    const res = await window.motel.saveServer(value);
+    setCheck("api", !!res.api);
+    setCheck("db", !!res.database);
+
+    if (res.ok) {
+      msg.className = "msg ok";
+      msg.textContent = "Connecté ! / Connected!";
+      return; // main process is loading the PMS
+    }
+    btn.disabled = false;
+    msg.className = "msg err";
+    msg.textContent = !res.api
+      ? "Serveur introuvable — vérifiez l'adresse. / Server not reachable — check the address."
+      : "API joignable mais base de données indisponible — vérifiez le serveur. / API up but database unavailable — check the server.";
+  }
+  btn.addEventListener("click", connect);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") connect(); });
+</script>
+</body>
+</html>

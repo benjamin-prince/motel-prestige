@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --app --no-src-dir --no-import-alias --eslint)",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(curl -s --max-time 5 \"http://localhost:8000/api/config/menu-subcategories\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{len\\(d\\)} subcats'\\); [print\\(f'  {s[\\\\\"parent_value_en\\\\\"]} → {s[\\\\\"value_en\\\\\"]}'\\) for s in d[:5]]\")",
+      "Bash(curl -s \"http://localhost:8000/api/config/menu-subcategories\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{len\\(d\\)} subcats'\\); [print\\(f'  {s[\\\\\"parent_value_en\\\\\"]} → {s[\\\\\"value_en\\\\\"]} / {s[\\\\\"value_fr\\\\\"]}'\\) for s in d[:8]]\")",
+      "Bash(pdftotext \"/Users/benjamin/Desktop/TehCargo receipt/en/ORBITA C Locking System SDK5.6.pdf\" -)",
+      "Bash(curl -s \"http://localhost:8000/api/guests/\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(npx tsc *)",
+      "Bash(python3 *)",
+      "Bash(docker exec *)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@motel-prestige.com\",\"password\":\"Admin@1234\"}')",
+      "Bash(curl -s -o /dev/null -w \"stock-status: %{http_code}\\\\n\" http://localhost:3000/front-office/stock-status)",
+      "Bash(curl -s -o /dev/null -w \"store-requisition: %{http_code}\\\\n\" http://localhost:3000/front-office/store-requisition)",
+      "Bash(curl -s -o /dev/null -w \"report: %{http_code}\\\\n\" http://localhost:3000/front-office/report)",
+      "Bash(curl -s -L -o /dev/null -w \"stock-status final: %{http_code} -> %{url_effective}\\\\n\" http://localhost:3000/front-office/stock-status)",
+      "Bash(touch /Users/benjamin/Projects/tehMoney/backend/app/__init__.py /Users/benjamin/Projects/tehMoney/backend/app/services/__init__.py /Users/benjamin/Projects/tehMoney/backend/app/routers/__init__.py)",
+      "Read(//Users/benjamin/Projects/tehMoney/**)",
+      "Bash(docker compose *)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/uvicorn app.main:app --port 8100)",
+      "Bash(curl -s http://localhost:8100/api/health)",
+      "Bash(pkill -f \"uvicorn app.main:app --port 8100\")",
+      "Bash(curl -s -X POST http://localhost:8100/api/auth/login -H 'Content-Type: application/json' -d '{\"phone\":\"650555666\",\"pin\":\"1234\"}')",
+      "Bash(docker rm *)"
+    ]
+  },
+  "prefersReducedMotion": false
+}

@@ -1,0 +1,58 @@
+# Motel Prestige — online admin console (VPS).
+# Read-only replica of the motel's data + super-admin tasks (users, roles).
+# Business operations happen on the motel desktop apps, never here.
+#
+#   cp .env.example .env   # then fill in domain, passwords, secret
+#   docker compose up -d --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: motel_prestige
+      TZ: ${TZ:-America/New_York}
+    # Exposed so the motel server can push/pull the sync. RESTRICT THIS PORT
+    # to the motel's public IP in the VPS firewall (ufw/cloud firewall).
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: ../../backend
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/motel_prestige
+      READ_ONLY_MODE: "true"
+      JWT_SECRET_KEY: ${JWT_SECRET:?set JWT_SECRET in .env}
+      TZ: ${TZ:-America/New_York}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    build: ../../frontend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PMS_DOMAIN: ${PMS_DOMAIN:?set PMS_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
