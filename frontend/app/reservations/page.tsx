@@ -65,7 +65,7 @@ function ReservationForm({
     guest_id: "",
     room_id: initialRoomId || "",
     rate_plan: "OS",      // OS = overnight (nuitée), SS = Short Stay (2h)
-    ss_time: "",          // Short Stay start time, e.g. "14:00"
+    ss_time: new Date().toTimeString().slice(0, 5), // Short Stay starts now by default
     checkin_time: "18:00",// Nuitée declared arrival time — occupancy starts here
     check_in_date: initialRoomId ? today : "",
     check_out_date: initialRoomId ? tomorrow : "",
@@ -539,7 +539,17 @@ function ReservationForm({
               <div className="grid grid-cols-2 gap-2">
                 {([["OS", `🌙 ${t.overnight_stay}`], ["SS", `⏱️ ${t.short_stay_2h}`]] as [string, string][]).map(([plan, label]) => (
                   <button key={plan} type="button"
-                    onClick={() => { setStepError(""); setForm(f => ({ ...f, rate_plan: plan, room_id: "" })); }}
+                    onClick={() => {
+                      setStepError("");
+                      // Short stay: default to right now (today + current time)
+                      setForm(f => ({
+                        ...f, rate_plan: plan, room_id: "",
+                        ...(plan === "SS" ? {
+                          check_in_date: f.check_in_date || today,
+                          ss_time: new Date().toTimeString().slice(0, 5),
+                        } : {}),
+                      }));
+                    }}
                     className="py-2.5 rounded-xl text-sm font-bold border transition-all"
                     style={form.rate_plan === plan
                       ? { background: "var(--blue-light)", borderColor: "var(--blue)", color: "var(--blue)" }

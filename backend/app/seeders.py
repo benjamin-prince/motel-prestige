@@ -641,7 +641,7 @@ def seed_roles(db: Session):
                 "fo.checkin","fo.checkout",
                 "fo.folio.view","fo.folio.charge","fo.folio.settle","fo.unsettled",
                 "guests.view","guests.create","guests.edit",
-                "kc.view","kc.issue","kc.issue.new_booking","kc.revoke","kc.report_lost",
+                "kc.view","kc.issue","kc.issue.new_booking","kc.revoke","kc.report_lost","kc.test_access",
                 "acc.invoices.view","acc.payments.view","acc.payments.create","acc.caisse",
             ),
         },

@@ -22,24 +22,29 @@ const RES_STATUS_META: Record<string, { color: string; en: string; fr: string }>
 
 export default function ReportPage() {
   const { t, lang } = useI18n();
+  const today = new Date().toISOString().slice(0, 10);
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [overdue, setOverdue] = useState<any[]>([]);
   const [folioBalances, setFolioBalances] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [generated, setGenerated] = useState<string>("");
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState(today);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [r, res, inv, ov] = await Promise.all([
+      const [r, res, inv, pay, ov] = await Promise.all([
         api.getRooms(),
         api.getReservations(""),
         api.getInvoices(),
+        api.getPayments().catch(() => []),
         api.getPendingCheckouts(),
       ]);
-      setRooms(r); setReservations(res); setInvoices(inv); setOverdue(ov);
+      setRooms(r); setReservations(res); setInvoices(inv); setPayments(pay); setOverdue(ov);
       // Folio balances of in-house guests — the same source of truth used by
       // the Unsettled page and the check-out debt guard.
       const inHouse = res.filter((x: any) => x.status === "checked_in");
@@ -51,14 +56,21 @@ export default function ReportPage() {
 
   useEffect(() => { load(); }, []);
 
-  // Computed metrics
+  // Computed metrics — occupancy/room status are a live snapshot; money and
+  // reservation counts respect the selected period.
   const totalRooms = rooms.length;
   const occupied = rooms.filter(r => r.status === "occupied").length;
   const occRate = totalRooms ? Math.round((occupied / totalRooms) * 100) : 0;
 
+  const inPeriod = (d?: string) => { const x = String(d || "").slice(0, 10); return x >= from && x <= to; };
+
   const checkedInRes = reservations.filter(r => r.status === "checked_in");
-  const totalRevenue = invoices.reduce((s, i) => s + Number(i.total), 0);
-  const collected = invoices.filter(i => i.status === "paid").reduce((s, i) => s + Number(i.amount_paid), 0);
+  // Collected = payments actually recorded in the period (folio payments,
+  // advances, settlements) — the number the desk reconciles the caisse with.
+  const collected = payments.filter(p => inPeriod(p.paid_at))
+    .reduce((s, p) => s + Number(p.xaf_equivalent ?? p.amount), 0);
+  const totalRevenue = invoices.filter(i => inPeriod(i.issued_at || i.created_at))
+    .reduce((s, i) => s + Number(i.total), 0);
   // Outstanding = unsettled in-house folio debt — what the check-out guard
   // will refuse to release until collected.
   const outstanding = folioBalances.filter(b => b > 0).reduce((s, b) => s + b, 0);
@@ -69,16 +81,33 @@ export default function ReportPage() {
   const roomStatusCounts = Object.fromEntries(
     Object.keys(ROOM_STATUS_META).map(k => [k, rooms.filter(r => r.status === k).length])
   );
+  // Stays overlapping the period
+  const periodRes = reservations.filter(r =>
+    String(r.check_in_date) <= to && String(r.check_out_date) >= from);
   const resStatusCounts = Object.fromEntries(
-    Object.keys(RES_STATUS_META).map(k => [k, reservations.filter(r => r.status === k).length])
+    Object.keys(RES_STATUS_META).map(k => [k, periodRes.filter(r => r.status === k).length])
   );
 
   const unsettled = folioBalances.filter(b => b > 0);
 
   const kpis = [
     { label: t.fo_occ_rate,  value: `${occRate}%`,  icon: "🏨", gradient: "linear-gradient(135deg,#3b5bdb,#4c6ef5)",  note: `${occupied}/${totalRooms}` },
-    { label: t.fo_rev_total, value: fmt(totalRevenue), icon: "💰", gradient: "linear-gradient(135deg,#059669,#10b981)", note: lang === "fr" ? "Total facturé" : "Total invoiced" },
+    { label: t.fo_rev_total, value: fmt(collected), icon: "💰", gradient: "linear-gradient(135deg,#059669,#10b981)", note: lang === "fr" ? "Encaissé sur la période" : "Collected in period" },
     { label: t.fo_adr,       value: fmt(adr),         icon: "📊", gradient: "linear-gradient(135deg,#7c3aed,#8b5cf6)", note: lang === "fr" ? "Chambres occupées" : "Occupied rooms" },
+  ];
+
+  // Quick period presets
+  const setPreset = (days: number | "month" | "all") => {
+    if (days === "all") { setFrom("2000-01-01"); setTo(today); return; }
+    if (days === "month") { setFrom(today.slice(0, 8) + "01"); setTo(today); return; }
+    const d = new Date(Date.now() - (days - 1) * 86400000);
+    setFrom(d.toISOString().slice(0, 10)); setTo(today);
+  };
+  const presets: [string, () => void][] = [
+    [lang === "fr" ? "Aujourd'hui" : "Today", () => setPreset(1)],
+    [lang === "fr" ? "7 jours" : "7 days", () => setPreset(7)],
+    [lang === "fr" ? "Ce mois" : "This month", () => setPreset("month")],
+    [lang === "fr" ? "Tout" : "All", () => setPreset("all")],
   ];
 
   return (
@@ -100,6 +129,27 @@ export default function ReportPage() {
           {lang === "fr" ? "Généré le" : "Generated"} {generated}
         </p>
       )}
+
+      {/* Period selector */}
+      <div className="card p-3 mb-5 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider mr-1" style={{ color: "var(--muted)" }}>
+          {lang === "fr" ? "Période" : "Period"}
+        </span>
+        <input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)}
+          className="field-input" style={{ width: 150, marginTop: 0 }} />
+        <span style={{ color: "var(--muted)" }}>→</span>
+        <input type="date" value={to} min={from} onChange={e => setTo(e.target.value)}
+          className="field-input" style={{ width: 150, marginTop: 0 }} />
+        <div className="flex gap-1.5 flex-wrap sm:ml-2">
+          {presets.map(([label, fn]) => (
+            <button key={label} onClick={fn}
+              className="text-xs px-3 py-1.5 rounded-lg font-semibold border transition-colors"
+              style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--card)" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -148,7 +198,7 @@ export default function ReportPage() {
           <div className="space-y-3">
             {Object.entries(RES_STATUS_META).map(([k, m]) => {
               const cnt = resStatusCounts[k] || 0;
-              const total = reservations.length;
+              const total = periodRes.length;
               const pct = total ? Math.round((cnt / total) * 100) : 0;
               return (
                 <div key={k} className="flex items-center gap-3">
@@ -219,8 +269,8 @@ export default function ReportPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: t.fo_rev_total,       value: totalRevenue, color: "var(--text)",  bold: true },
-              { label: t.fo_rev_collected,   value: collected,    color: "#059669",      bold: false },
+              { label: t.fo_rev_collected,   value: collected,    color: "#059669",     bold: true },
+              { label: lang === "fr" ? "Facturé (période)" : "Invoiced (period)", value: totalRevenue, color: "var(--text)", bold: false },
               { label: t.fo_rev_outstanding, value: outstanding,  color: "#dc2626",      bold: false },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between py-2"

@@ -255,7 +255,8 @@ def report_lost(card_id: int, db: Session = Depends(get_db)):
     return card
 
 
-@router.post("/{card_id}/simulate-access", dependencies=[Depends(require("kc.test_access"))])
+@router.post("/{card_id}/simulate-access",
+             dependencies=[Depends(require("kc.test_access", "fo.checkin", "kc.issue"))])
 def simulate_access(card_id: int, door_location: str, reader_id: Optional[str] = None, db: Session = Depends(get_db)):
     card = get_or_404(db, KeyCard, id=card_id, name="Card")
 
