@@ -149,7 +149,7 @@ function Shell({ children }: { children: ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
+      <div className="ms-shell flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
         <div className={`ms-backdrop ${menuOpen ? "show" : ""}`} onClick={() => setMenuOpen(false)} />
         <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">

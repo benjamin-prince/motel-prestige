@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "@/lib/api";
+import { useProperty } from "@/lib/property-context";
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
@@ -22,6 +23,7 @@ const RES_STATUS_META: Record<string, { color: string; en: string; fr: string }>
 
 export default function ReportPage() {
   const { t, lang } = useI18n();
+  const { current } = useProperty();
   const today = new Date().toISOString().slice(0, 10);
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -112,26 +114,43 @@ export default function ReportPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
+      {/* Print-only letterhead */}
+      <div className="print-only mb-4" style={{ borderBottom: "2px solid #1e293b", paddingBottom: 12 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{current?.name ?? "Motel Prestige"}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>{t.fo_report_title}</div>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+          {lang === "fr" ? "Période" : "Period"} : {from} → {to}
+          {generated && <> · {lang === "fr" ? "Généré le" : "Generated"} {generated}</>}
+        </div>
+      </div>
+
+      <div className="flex items-start justify-between mb-6 no-print">
         <div>
           <h2 className="page-title">{t.fo_report_title}</h2>
           <p className="page-subtitle">{t.fo_report_desc}</p>
         </div>
-        <button onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
-          style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-          🔄 {lang === "fr" ? "Actualiser" : "Refresh"}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={load}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border"
+            style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
+            🔄 {lang === "fr" ? "Actualiser" : "Refresh"}
+          </button>
+          <button onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+            style={{ background: "var(--blue)" }}>
+            🖨️ {lang === "fr" ? "Imprimer" : "Print"}
+          </button>
+        </div>
       </div>
 
       {generated && (
-        <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
+        <p className="text-xs mb-4 no-print" style={{ color: "var(--muted)" }}>
           {lang === "fr" ? "Généré le" : "Generated"} {generated}
         </p>
       )}
 
       {/* Period selector */}
-      <div className="card p-3 mb-5 flex flex-wrap items-center gap-2">
+      <div className="card p-3 mb-5 flex flex-wrap items-center gap-2 no-print">
         <span className="text-xs font-bold uppercase tracking-wider mr-1" style={{ color: "var(--muted)" }}>
           {lang === "fr" ? "Période" : "Period"}
         </span>

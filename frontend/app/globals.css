@@ -273,3 +273,27 @@ button:disabled {
   main table th, main table td { white-space: nowrap; }
   .card { border-radius: 10px; }
 }
+
+/* ── Print: chrome hidden, content flows on paper ── */
+.print-only { display: none; }
+@media print {
+  .ms-side, .ms-backdrop, header, .no-print { display: none !important; }
+  .ms-shell, .ms-shell > div, main {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  main { padding: 0 !important; }
+  body { background: #fff !important; }
+  .print-only { display: block !important; }
+  .page-enter { animation: none !important; }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #d5dbe7 !important;
+    break-inside: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
