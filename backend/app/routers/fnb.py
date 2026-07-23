@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import require, get_current_user
-from ..models.fnb import FnbOrder, FnbOrderItem
+from pydantic import BaseModel
+
+from ..models.fnb import FnbOrder, FnbOrderItem, FnbOutlet
 from ..models.reservation import Reservation
 from ..models.room import Room
 from ..models.billing import FolioCharge
@@ -45,6 +47,49 @@ def _apply_items(order: FnbOrder, items) -> None:
             line_total=(it.unit_price * it.quantity),
         ))
     _recalc(order)
+
+
+# ── Outlets ───────────────────────────────────────────────────────────────────
+class OutletBody(BaseModel):
+    name: str
+    outlet_type: str = "restaurant"
+    location: Optional[str] = None
+    is_active: bool = True
+
+
+@router.get("/outlets", dependencies=[Depends(require("fnb.outlets", "fnb.orders.view", "fnb.orders.manage"))])
+def list_outlets(db: Session = Depends(get_db)):
+    return db.query(FnbOutlet).order_by(FnbOutlet.name).all()
+
+
+@router.post("/outlets", status_code=201, dependencies=[Depends(require("fnb.outlets"))])
+def create_outlet(data: OutletBody, db: Session = Depends(get_db)):
+    o = FnbOutlet(**data.model_dump())
+    db.add(o)
+    db.commit()
+    db.refresh(o)
+    return o
+
+
+@router.patch("/outlets/{outlet_id}", dependencies=[Depends(require("fnb.outlets"))])
+def update_outlet(outlet_id: int, data: OutletBody, db: Session = Depends(get_db)):
+    o = db.query(FnbOutlet).filter(FnbOutlet.id == outlet_id).first()
+    if not o:
+        raise HTTPException(404, "Outlet not found")
+    for k, v in data.model_dump().items():
+        setattr(o, k, v)
+    db.commit()
+    db.refresh(o)
+    return o
+
+
+@router.delete("/outlets/{outlet_id}", status_code=204, dependencies=[Depends(require("fnb.outlets"))])
+def delete_outlet(outlet_id: int, db: Session = Depends(get_db)):
+    o = db.query(FnbOutlet).filter(FnbOutlet.id == outlet_id).first()
+    if not o:
+        raise HTTPException(404, "Outlet not found")
+    db.delete(o)
+    db.commit()
 
 
 @router.get("/orders", response_model=List[FnbOrderResponse],

@@ -31,6 +31,18 @@ class FnbOrder(Base):
                          cascade="all, delete-orphan", lazy="selectin")
 
 
+class FnbOutlet(Base):
+    """A distinct food & beverage point of sale (a restaurant, a bar…)."""
+    __tablename__ = "fnb_outlets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    outlet_type = Column(String(20), nullable=False, default="restaurant")  # restaurant | bar
+    location = Column(String(120))
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+
 class FnbOrderItem(Base):
     __tablename__ = "fnb_order_items"
 
