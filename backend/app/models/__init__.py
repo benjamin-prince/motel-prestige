@@ -10,4 +10,6 @@ from .hk_task import HKTask
 from .lost_found import LostFoundItem
 from .maintenance import MaintenanceRequest
 from .inventory import StoreItem, StockMovement, StoreRequisition, StoreRequisitionItem
-from .fnb import FnbOrder, FnbOrderItem
+from .fnb import FnbOrder, FnbOrderItem, FnbOutlet
+from .sales import RatePackage, SalesAccount
+from .hr import StaffShift, PayrollRecord

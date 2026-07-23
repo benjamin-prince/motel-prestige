@@ -205,6 +205,39 @@ export const api = {
     request<any>(`/fnb/orders/${id}/settle`, { method: "POST", body: JSON.stringify({ payment_method: paymentMethod }) }),
   cancelFnbOrder: (id: number) => request<void>(`/fnb/orders/${id}`, { method: "DELETE" }),
 
+  // F&B Outlets
+  getFnbOutlets: () => request<any[]>("/fnb/outlets"),
+  createFnbOutlet: (data: any) => request<any>("/fnb/outlets", { method: "POST", body: JSON.stringify(data) }),
+  updateFnbOutlet: (id: number, data: any) => request<any>(`/fnb/outlets/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteFnbOutlet: (id: number) => request<void>(`/fnb/outlets/${id}`, { method: "DELETE" }),
+
+  // Sales — rate packages
+  getPackages: (activeOnly = false) => request<any[]>(`/sales/packages${activeOnly ? "?active_only=true" : ""}`),
+  createPackage: (data: any) => request<any>("/sales/packages", { method: "POST", body: JSON.stringify(data) }),
+  updatePackage: (id: number, data: any) => request<any>(`/sales/packages/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deletePackage: (id: number) => request<void>(`/sales/packages/${id}`, { method: "DELETE" }),
+
+  // Sales — accounts (corporate / agents / OTA)
+  getSalesAccounts: (type?: string) => request<any[]>(`/sales/accounts${type ? `?account_type=${type}` : ""}`),
+  createSalesAccount: (data: any) => request<any>("/sales/accounts", { method: "POST", body: JSON.stringify(data) }),
+  updateSalesAccount: (id: number, data: any) => request<any>(`/sales/accounts/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteSalesAccount: (id: number) => request<void>(`/sales/accounts/${id}`, { method: "DELETE" }),
+
+  // HR — shifts
+  getShifts: (params?: { date_from?: string; date_to?: string; user_id?: number }) => {
+    const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)])).toString();
+    return request<any[]>(`/hr/shifts${qs ? `?${qs}` : ""}`);
+  },
+  createShift: (data: any) => request<any>("/hr/shifts", { method: "POST", body: JSON.stringify(data) }),
+  updateShift: (id: number, data: any) => request<any>(`/hr/shifts/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteShift: (id: number) => request<void>(`/hr/shifts/${id}`, { method: "DELETE" }),
+
+  // HR — payroll
+  getPayroll: (period?: string) => request<any[]>(`/hr/payroll${period ? `?period=${period}` : ""}`),
+  createPayroll: (data: any) => request<any>("/hr/payroll", { method: "POST", body: JSON.stringify(data) }),
+  updatePayroll: (id: number, data: any) => request<any>(`/hr/payroll/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deletePayroll: (id: number) => request<void>(`/hr/payroll/${id}`, { method: "DELETE" }),
+
   getFolioParticulars: (all = false) => request<any[]>(`/config/folio-particulars${all ? "?all=true" : ""}`),
   createFolioParticular: (data: any) => request<any>("/config/folio-particulars", { method: "POST", body: JSON.stringify(data) }),
   updateFolioParticular: (id: number, data: any) => request<any>(`/config/folio-particulars/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
