@@ -158,6 +158,9 @@ export const api = {
   approveRequisition: (id: number, note?: string) => request<any>(`/inventory/requisitions/${id}/approve`, { method: "POST", body: JSON.stringify({ note }) }),
   rejectRequisition: (id: number, note?: string) => request<any>(`/inventory/requisitions/${id}/reject`, { method: "POST", body: JSON.stringify({ note }) }),
 
+  // Dashboard analytics
+  getDashboardOverview: (days = 7) => request<any>(`/dashboard/overview?days=${days}`),
+
   // Night Audit
   getPendingCheckouts: () => request<any[]>("/billing/night-audit/pending-checkouts"),
   postNightlyCharges: () => request<any>("/billing/night-audit/post-room-charges", { method: "POST" }),
