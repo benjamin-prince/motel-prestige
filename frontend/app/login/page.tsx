@@ -36,26 +36,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "var(--bg)" }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(1100px 700px at 50% -10%, var(--gold-soft) 0%, transparent 60%)," +
+          "radial-gradient(900px 600px at 85% 110%, var(--blue-light) 0%, transparent 55%)," +
+          "var(--bg)",
+      }}>
+      {/* Faint hairline frame — an understated luxe detail */}
+      <div aria-hidden className="pointer-events-none absolute inset-4 sm:inset-6 rounded-2xl"
+        style={{ border: "1px solid var(--border)", opacity: 0.6 }} />
+
+      <div style={{ width: "100%", maxWidth: 404 }} className="relative">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl text-white text-2xl mb-3"
-            style={{ background: "var(--blue)" }}>🏨</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--blue)", letterSpacing: "-0.5px" }}>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-2xl mb-4"
+            style={{
+              background: "linear-gradient(145deg, var(--gold), var(--blue))",
+              boxShadow: "0 8px 24px -8px rgba(120,90,30,0.5), inset 0 1px 0 rgba(255,255,255,0.28)",
+            }}>🏨</div>
+          <div className="font-display" style={{ fontSize: 32, fontWeight: 600, color: "var(--text)", letterSpacing: "-0.02em" }}>
             {appName}
           </div>
-          <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-            {t.sign_in_to}
-          </p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span style={{ height: 1, width: 28, background: "var(--gold)", opacity: 0.6 }} />
+            <p className="text-xs uppercase tracking-[0.22em]" style={{ color: "var(--gold)" }}>
+              {t.sign_in_to}
+            </p>
+            <span style={{ height: 1, width: 28, background: "var(--gold)", opacity: 0.6 }} />
+          </div>
         </div>
 
-        <div className="card" style={{ padding: 0 }}>
+        <div className="card overflow-hidden" style={{ padding: 0, boxShadow: "var(--shadow-lg)" }}>
+          <div style={{ height: 3, background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
           <form onSubmit={handleSubmit} className="p-8 space-y-5">
             {error && (
               <div className="rounded-lg px-4 py-3 text-sm font-medium"
-                style={{ background: "#fce4ec", color: "#b71c1c", border: "1px solid #f48fb1" }}>
+                style={{ background: "var(--bad-bg)", color: "var(--bad)", border: "1px solid var(--bad)" }}>
                 {error}
               </div>
             )}

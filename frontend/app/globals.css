@@ -1,53 +1,79 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Maison Prestige — a warm, understated luxury-hotel palette.
+   Parchment & ivory surfaces, a rich bronze primary, antique-gold accents.
+   The whole app is token-driven, so these values cascade everywhere.
+   --blue is kept as the token NAME for the primary action (historical),
+   but now carries a bronze; --gold is the sparing highlight.
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
-  --bg: #f3f6fb;
-  --card: #ffffff;
-  --sidebar: #ffffff;
-  --sidebar-line: #e9eef6;
-  --sidebar-text: #6b7488;
-  --sidebar-muted: #98a1b4;
-  --sidebar-active-bg: #eaf0ff;
-  --sidebar-active-text: #2a58dd;
-  --blue: #2f62f6;
-  --blue-light: #eaf0ff;
-  --text: #1b2130;
-  --muted: #6b7488;
-  --border: #e6ecf4;
-  --input-bg: #f5f8fc;
+  --bg: #f4efe6;            /* warm parchment */
+  --card: #fffdf8;          /* warm ivory white */
+  --sidebar: #faf6ee;
+  --sidebar-line: #ece4d5;
+  --sidebar-text: #5b5342;
+  --sidebar-muted: #9c917c;
+  --sidebar-active-bg: #f1e8d6;
+  --sidebar-active-text: #7c5c22;   /* brass */
+  --blue: #836428;          /* primary — rich bronze (white text, AA) */
+  --blue-light: #f0e9db;
+  --gold: #a17c3f;          /* accent highlight */
+  --gold-soft: #f3ead4;
+  --text: #221d16;          /* warm near-black */
+  --muted: #6f6656;
+  --border: #e8e0d0;
+  --input-bg: #f5efe4;
   --accent: var(--blue);
-  --good: #16a34a; --good-bg: #e7f6ec;
-  --warn: #c07d16; --warn-bg: #fbf1dd;
-  --bad: #e0474c; --bad-bg: #fdeaea;
-  --info: #2f62f6; --info-bg: #e9f0ff;
+  --good: #4a7a4e; --good-bg: #e8f0e6;
+  --warn: #b07d2a; --warn-bg: #f6ecd6;
+  --bad: #b0443f;  --bad-bg: #f6e2df;
+  --info: #4a6480; --info-bg: #eaeff4;
+  --shadow: 0 1px 2px rgba(60,45,20,0.05), 0 6px 18px -8px rgba(60,45,20,0.14);
+  --shadow-lg: 0 12px 40px -12px rgba(50,38,18,0.28);
 }
 :root[data-theme="dark"] {
-  --bg: #0c1017;
-  --card: #141a24;
-  --sidebar: #111722;
-  --sidebar-line: #212a38;
-  --sidebar-text: #96a0b3;
-  --sidebar-muted: #68728a;
-  --sidebar-active-bg: #1b2740;
-  --sidebar-active-text: #7f9cff;
-  --blue: #5b83ff;
-  --blue-light: #1b2740;
-  --text: #e8ecf3;
-  --muted: #96a0b3;
-  --border: #232c3a;
-  --input-bg: #1c2431;
-  --good: #4ec27f; --good-bg: #12321f;
-  --warn: #d69e4a; --warn-bg: #332711;
-  --bad: #f0696e; --bad-bg: #3a1a1c;
-  --info: #5b83ff; --info-bg: #182440;
+  --bg: #110e09;            /* espresso black */
+  --card: #1b1710;
+  --sidebar: #16120b;
+  --sidebar-line: #2a2416;
+  --sidebar-text: #b9ad95;
+  --sidebar-muted: #7e745f;
+  --sidebar-active-bg: #2b2313;
+  --sidebar-active-text: #dbba79;   /* gold */
+  --blue: #8f6c30;          /* primary — deep bronze (white text passes AA on dark) */
+  --blue-light: #2a2314;
+  --gold: #d9b978;          /* accent — bright gold for text/borders on espresso */
+  --gold-soft: #2b2313;
+  --text: #f0e9db;          /* warm ivory */
+  --muted: #a89a80;
+  --border: #2c2517;
+  --input-bg: #201b12;
+  --accent: var(--blue);
+  --good: #6faf6f; --good-bg: #17301a;
+  --warn: #d6a24e; --warn-bg: #33270f;
+  --bad: #e07872;  --bad-bg: #3a1a19;
+  --info: #8aa6c4; --info-bg: #182430;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -10px rgba(0,0,0,0.6);
+  --shadow-lg: 0 16px 48px -12px rgba(0,0,0,0.7);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-body), "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* Serif display for headings & brand — the signature of the luxe look. */
+.page-title, .section-title {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+.font-display { font-family: var(--font-display), Georgia, serif; }
+/* Tabular figures keep money & counts aligned in tables. */
+.tabular { font-variant-numeric: tabular-nums; }
 
 /* Shared input style */
 .field-input {
@@ -62,8 +88,9 @@ body {
   transition: border-color 0.15s;
 }
 .field-input:focus {
-  border-color: var(--blue);
-  background: #fff;
+  border-color: var(--gold);
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--gold-soft);
 }
 
 .field-label {
@@ -76,8 +103,9 @@ body {
 /* Card */
 .card {
   background: var(--card);
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(60,80,140,0.07), 0 0 0 1px rgba(60,80,140,0.05);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 /* Section heading */
@@ -126,15 +154,18 @@ body {
 @layer components {
   .btn-primary {
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 13px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     color: #fff;
     background: var(--blue);
-    transition: opacity 0.15s;
+    box-shadow: 0 1px 2px rgba(60,45,20,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: filter 0.15s, box-shadow 0.15s;
   }
   .btn-primary:hover {
-    opacity: 0.9;
+    filter: brightness(1.08);
+    box-shadow: 0 3px 10px -2px rgba(90,68,24,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
   }
   .btn-secondary {
     padding: 8px 16px;
@@ -164,7 +195,7 @@ body {
 
 /* Keyboard focus — visible ring for keyboard users only */
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
   border-radius: 4px;
 }

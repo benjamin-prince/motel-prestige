@@ -79,14 +79,18 @@ export default function Sidebar({ open = false, onClose }: Props) {
       <div className="px-4 py-4 shrink-0" style={{ borderBottom: "1px solid var(--sidebar-line)" }}>
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0"
-            style={{ background: "var(--blue)" }}>
+            style={{
+              background: "linear-gradient(145deg, var(--gold), var(--blue))",
+              boxShadow: "0 2px 8px -2px rgba(120,90,30,0.45), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}>
             <span>{current ? (TYPE_ICON[current.type] || "🏢") : "🏨"}</span>
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold leading-tight truncate" style={{ color: "var(--text)" }}>
-              {current?.name ?? "Hotel PMS"}
+            <div className="font-display text-[15px] font-semibold leading-tight truncate"
+              style={{ color: "var(--text)", letterSpacing: "-0.01em" }}>
+              {current?.name ?? "Prestige"}
             </div>
-            <div className="text-[11px] capitalize truncate" style={{ color: "var(--sidebar-muted)" }}>
+            <div className="text-[10px] uppercase tracking-[0.16em] truncate" style={{ color: "var(--gold)" }}>
               {current?.type ?? "property management"}
             </div>
           </div>
@@ -162,7 +166,7 @@ export default function Sidebar({ open = false, onClose }: Props) {
       <div className="px-3 py-3 shrink-0" style={{ borderTop: "1px solid var(--sidebar-line)" }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-            style={{ background: "linear-gradient(135deg,#2f62f6,#8a6bff)" }}>{initials}</div>
+            style={{ background: "linear-gradient(135deg, var(--gold), var(--blue))" }}>{initials}</div>
           <div className="min-w-0">
             <div className="text-[13px] font-medium truncate" style={{ color: "var(--text)" }}>{displayName}</div>
             <div className="text-[11px] truncate" style={{ color: "var(--sidebar-muted)" }}>{roleLabel}</div>
