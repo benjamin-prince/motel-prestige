@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Text, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Date, Text, TIMESTAMP, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -22,6 +22,20 @@ class Guest(Base):
     address = Column(Text)
     referred_by = Column(String(200))
     notes = Column(Text)
+
+    # ── CRM / loyalty ──────────────────────────────────────────────────────
+    vip = Column(Boolean, nullable=False, default=False)
+    loyalty_tier = Column(String(20), nullable=False, default="standard")  # standard|silver|gold|platinum
+    loyalty_points = Column(Integer, nullable=False, default=0)
+    tags = Column(Text)  # comma-separated labels (e.g. "corporate,repeat,honeymoon")
+    marketing_opt_in = Column(Boolean, nullable=False, default=False)
+    # stay preferences (surfaced to front desk on the profile)
+    preferred_room_type = Column(String(50))
+    bed_preference = Column(String(50))       # e.g. king, twin, double
+    smoking_preference = Column(String(10))   # no | yes
+    dietary = Column(String(200))
+    preferences = Column(Text)                # freeform extra preferences
+
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

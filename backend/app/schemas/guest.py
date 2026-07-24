@@ -17,6 +17,17 @@ class GuestBase(BaseModel):
     address: Optional[str] = None
     referred_by: Optional[str] = None
     notes: Optional[str] = None
+    # CRM / loyalty
+    vip: bool = False
+    loyalty_tier: str = "standard"
+    loyalty_points: int = 0
+    tags: Optional[str] = None
+    marketing_opt_in: bool = False
+    preferred_room_type: Optional[str] = None
+    bed_preference: Optional[str] = None
+    smoking_preference: Optional[str] = None
+    dietary: Optional[str] = None
+    preferences: Optional[str] = None
 
 
 class GuestCreate(GuestBase):
@@ -37,6 +48,16 @@ class GuestUpdate(BaseModel):
     address: Optional[str] = None
     referred_by: Optional[str] = None
     notes: Optional[str] = None
+    vip: Optional[bool] = None
+    loyalty_tier: Optional[str] = None
+    loyalty_points: Optional[int] = None
+    tags: Optional[str] = None
+    marketing_opt_in: Optional[bool] = None
+    preferred_room_type: Optional[str] = None
+    bed_preference: Optional[str] = None
+    smoking_preference: Optional[str] = None
+    dietary: Optional[str] = None
+    preferences: Optional[str] = None
 
 
 class GuestResponse(GuestBase):

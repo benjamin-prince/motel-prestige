@@ -93,6 +93,7 @@ export const api = {
   getGuests: (search?: string) => request<any[]>(`/guests/${search ? `?search=${search}` : ""}`),
   createGuest: (data: any) => request<any>("/guests/", { method: "POST", body: JSON.stringify(data) }),
   updateGuest: (id: number, data: any) => request<any>(`/guests/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  getGuestProfile: (id: number) => request<any>(`/guests/${id}/profile`),
   deleteGuest: (id: number) => request<void>(`/guests/${id}`, { method: "DELETE" }),
 
   // Reservations

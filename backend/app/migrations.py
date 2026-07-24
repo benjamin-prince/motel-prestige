@@ -56,3 +56,18 @@ def run_schema_patches(engine: Engine) -> None:
             "UPDATE rooms SET stay_offer = 'BOTH' "
             "WHERE stay_offer = 'OS' AND COALESCE(price_short_stay, 0) > 0"
         ))
+        # guests CRM / loyalty — rich guest profiles (VIP, tier, points, tags,
+        # marketing consent) and stay preferences surfaced at the front desk.
+        for col, ddl in [
+            ("vip",                 "BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("loyalty_tier",        "VARCHAR(20) NOT NULL DEFAULT 'standard'"),
+            ("loyalty_points",      "INTEGER NOT NULL DEFAULT 0"),
+            ("tags",                "TEXT"),
+            ("marketing_opt_in",    "BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("preferred_room_type", "VARCHAR(50)"),
+            ("bed_preference",      "VARCHAR(50)"),
+            ("smoking_preference",  "VARCHAR(10)"),
+            ("dietary",             "VARCHAR(200)"),
+            ("preferences",         "TEXT"),
+        ]:
+            conn.execute(text(f"ALTER TABLE guests ADD COLUMN IF NOT EXISTS {col} {ddl}"))

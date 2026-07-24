@@ -7,8 +7,15 @@ from ..dependencies import require
 from ..models.guest import Guest
 from ..schemas.guest import GuestCreate, GuestUpdate, GuestResponse
 from ..services.crud import get_or_404, apply_updates
+from ..services import guest_service
 
 router = APIRouter(prefix="/guests", tags=["Guests"])
+
+
+@router.get("/{guest_id}/profile", dependencies=[Depends(require("guests.view"))])
+def guest_profile(guest_id: int, db: Session = Depends(get_db)):
+    """360° CRM profile: guest details + lifetime stats + stay history."""
+    return guest_service.get_profile(db, guest_id)
 
 
 @router.get("/", response_model=List[GuestResponse], dependencies=[Depends(require("guests.view"))])
