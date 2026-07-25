@@ -13,3 +13,4 @@ from .inventory import StoreItem, StockMovement, StoreRequisition, StoreRequisit
 from .fnb import FnbOrder, FnbOrderItem, FnbOutlet
 from .sales import RatePackage, SalesAccount
 from .hr import StaffShift, PayrollRecord
+from .pricing import PricingRule

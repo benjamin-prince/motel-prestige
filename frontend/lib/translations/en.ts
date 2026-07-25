@@ -42,6 +42,7 @@ const en = {
   nav_packages:         "Packages",
   nav_agents:           "Agents",
   nav_sales_reports:    "Reports",
+  nav_revenue:          "Revenue & Pricing",
   nav_staff:            "Staff",
   nav_schedules:        "Schedules",
   nav_payroll:          "Payroll",

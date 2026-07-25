@@ -44,6 +44,7 @@ const fr: Translations = {
   nav_packages:         "Forfaits",
   nav_agents:           "Agents",
   nav_sales_reports:    "Rapports",
+  nav_revenue:          "Revenus & Tarifs",
   nav_staff:            "Personnel",
   nav_schedules:        "Plannings",
   nav_payroll:          "Paie",

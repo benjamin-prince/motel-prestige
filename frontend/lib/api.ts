@@ -162,6 +162,13 @@ export const api = {
   // Dashboard analytics
   getDashboardOverview: (days = 7) => request<any>(`/dashboard/overview?days=${days}`),
 
+  // Revenue management / dynamic pricing
+  getRateCalendar: (days = 14) => request<any>(`/revenue/calendar?days=${days}`),
+  getPricingRules: () => request<any[]>("/revenue/rules"),
+  createPricingRule: (data: any) => request<any>("/revenue/rules", { method: "POST", body: JSON.stringify(data) }),
+  updatePricingRule: (id: number, data: any) => request<any>(`/revenue/rules/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deletePricingRule: (id: number) => request<void>(`/revenue/rules/${id}`, { method: "DELETE" }),
+
   // Night Audit
   getPendingCheckouts: () => request<any[]>("/billing/night-audit/pending-checkouts"),
   postNightlyCharges: () => request<any>("/billing/night-audit/post-room-charges", { method: "POST" }),

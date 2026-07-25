@@ -49,6 +49,7 @@ export const ROUTE_PERMS: Record<string, string | string[]> = {
   "/sales/packages":                  "sales.packages.view",
   "/sales/agents":                    "sales.agents.view",
   "/sales/reports":                   "sales.reports",
+  "/revenue":                         "revenue.view",
   "/hrm/staff":                       "hrm.staff.view",
   "/hrm/schedules":                   "hrm.schedules",
   "/hrm/payroll":                     "hrm.payroll",
@@ -143,6 +144,7 @@ export function useNavSections(): NavSection[] {
     {
       key: "sales", label: t.nav_sales, icon: "📊",
       children: [
+        { label: t.nav_revenue,       href: "/revenue" },
         { label: t.nav_packages,      href: "/sales/packages" },
         { label: t.nav_agents,        href: "/sales/agents" },
         { label: t.nav_sales_reports, href: "/sales/reports" },
