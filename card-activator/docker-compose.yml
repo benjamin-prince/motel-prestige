@@ -1,0 +1,25 @@
+# Local run — on/near the front-desk PC where the Orbita encoder + bridge live.
+# The app reaches the bridge at ORBITA_BRIDGE_URL (default: the host's :8765).
+#   docker compose up -d --build   →  http://localhost:8080
+services:
+  card-activator:
+    build: .
+    image: boulaz2002/card-activator:latest
+    container_name: card-activator
+    ports:
+      - "8080:8000"
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:-prestige}
+      SECRET_KEY: ${SECRET_KEY:-change-me-please}
+      ORBITA_BRIDGE_URL: ${ORBITA_BRIDGE_URL:-http://host.docker.internal:8765}
+      ORBITA_BRIDGE_API_KEY: ${ORBITA_BRIDGE_API_KEY:-}
+      ORBITA_BUILDING: ${ORBITA_BUILDING:-01}
+      TZ: ${TZ:-America/New_York}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets the container reach the bridge on the host
+    volumes:
+      - cta_data:/data
+    restart: unless-stopped
+
+volumes:
+  cta_data:

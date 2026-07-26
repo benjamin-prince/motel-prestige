@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Card Time Activator — Motel Prestige</title>
+<style>
+  :root {
+    --bg:#f4efe6; --card:#fffdf8; --text:#221d16; --muted:#6f6656;
+    --border:#e8e0d0; --input:#f5efe4; --blue:#836428; --gold:#a17c3f;
+    --gold-soft:#f3ead4; --good:#4a7a4e; --good-bg:#e8f0e6; --bad:#b0443f; --bad-bg:#f6e2df;
+    --shadow:0 1px 2px rgba(60,45,20,.05), 0 8px 24px -12px rgba(60,45,20,.22);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#110e09; --card:#1b1710; --text:#f0e9db; --muted:#a89a80; --border:#2c2517;
+    --input:#201b12; --blue:#c79a4e; --gold:#d9b978; --gold-soft:#2b2313;
+    --good:#6faf6f; --good-bg:#17301a; --bad:#e07872; --bad-bg:#3a1a19;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.6);
+  }}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:
+      radial-gradient(900px 500px at 50% -12%, var(--gold-soft) 0%, transparent 60%),
+      var(--bg);
+    color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;min-height:100vh;padding:24px 16px}
+  .serif{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.01em}
+  .wrap{max-width:760px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:12px;justify-content:center;margin:8px 0 24px}
+  .mark{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:22px;
+    background:linear-gradient(145deg,var(--gold),var(--blue));
+    box-shadow:0 4px 14px -4px rgba(120,90,30,.5), inset 0 1px 0 rgba(255,255,255,.28)}
+  .brand h1{font-size:22px;font-weight:600}
+  .brand .sub{font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:var(--gold)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+    box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input[type=text],input[type=number],input[type=password]{
+    width:100%;background:var(--input);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;font-size:15px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+  input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+  .btn{width:100%;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:600;
+    color:#fff;background:var(--blue);cursor:pointer;letter-spacing:.01em;
+    box-shadow:0 1px 2px rgba(60,45,20,.2), inset 0 1px 0 rgba(255,255,255,.14);transition:filter .15s}
+  .btn:hover{filter:brightness(1.08)} .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);box-shadow:none;
+    width:auto;padding:6px 12px;font-size:12px;font-weight:500}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+  .chip{border:1px solid var(--border);background:var(--input);color:var(--text);border-radius:999px;
+    padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s}
+  .chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    padding:4px 11px;border-radius:999px;letter-spacing:.02em}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .p-good{background:var(--good-bg);color:var(--good)} .p-bad{background:var(--bad-bg);color:var(--bad)}
+  .p-gold{background:var(--gold-soft);color:var(--gold)}
+  .muted{color:var(--muted)} .tabular{font-variant-numeric:tabular-nums}
+  .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .sec{font-size:14px;font-weight:700}
+  .act{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 0;border-top:1px solid var(--border)}
+  .act:first-child{border-top:none}
+  .big{font-size:30px;font-weight:600}
+  .center{text-align:center}
+  .hidden{display:none}
+  .result{border-radius:12px;padding:14px;margin-top:14px;border:1px solid var(--border)}
+  a{color:var(--gold)}
+  .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="mark">🔑</div>
+    <div>
+      <h1 class="serif">Card Time Activator</h1>
+      <div class="sub">Motel Prestige</div>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div id="login" class="card" style="max-width:380px;margin:0 auto">
+    <label>Staff password</label>
+    <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password" />
+    <div id="loginErr" class="pill p-bad hidden" style="margin:10px 0"></div>
+    <button class="btn" style="margin-top:12px" onclick="login()">Sign in</button>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <div class="card">
+      <div class="hd">
+        <div class="sec serif" style="font-size:16px">Activate a card</div>
+        <span id="encoder" class="pill p-gold"><span class="dot"></span>checking…</span>
+      </div>
+
+      <label>Duration <span class="muted">(1 hour – 1 month)</span></label>
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Custom hours</label>
+          <input id="hours" type="number" min="1" max="744" step="1" placeholder="e.g. 5" oninput="pickCustom()"/>
+        </div>
+        <div>
+          <label>Room <span class="muted">(for physical encode)</span></label>
+          <input id="room" type="text" inputmode="numeric" placeholder="e.g. 101"/>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <label>Card label <span class="muted">(optional)</span></label>
+        <input id="label" type="text" placeholder="e.g. Front desk spare"/>
+      </div>
+
+      <button class="btn" id="go" style="margin-top:16px" onclick="activate()">Activate card</button>
+      <div id="result" class="result hidden"></div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <div class="sec serif" style="font-size:16px">Recent activations</div>
+        <button class="btn-ghost" onclick="refresh()">Refresh</button>
+      </div>
+      <div id="list"><div class="muted center" style="padding:18px 0">Loading…</div></div>
+    </div>
+    <div class="foot">
+      Encoder: <span id="bridgeInfo" class="muted">—</span> ·
+      <a href="#" onclick="logout();return false">Sign out</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRESETS = [
+  ["1h",1],["2h",2],["3h",3],["6h",6],["12h",12],
+  ["1 day",24],["2 days",48],["3 days",72],["1 week",168],["2 weeks",336],["1 month",720],
+];
+let token = localStorage.getItem("cta_token") || "";
+let sel = 24; // default 1 day
+
+function api(path, opts={}) {
+  opts.headers = Object.assign({"Content-Type":"application/json"}, opts.headers||{});
+  if (token) opts.headers["Authorization"] = "Bearer "+token;
+  return fetch(path, opts).then(async r => {
+    if (r.status===401){ logout(); throw new Error("Session expired"); }
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(d.detail || "Request failed");
+    return d;
+  });
+}
+function show(authed){
+  document.getElementById("login").classList.toggle("hidden", authed);
+  document.getElementById("app").classList.toggle("hidden", !authed);
+}
+async function login(){
+  const pw = document.getElementById("pw").value;
+  const err = document.getElementById("loginErr");
+  try{
+    const d = await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password:pw})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.detail||"Wrong password");return j;});
+    token = d.token; localStorage.setItem("cta_token", token);
+    err.classList.add("hidden"); boot();
+  }catch(e){ err.textContent = e.message; err.classList.remove("hidden"); }
+}
+function logout(){ token=""; localStorage.removeItem("cta_token"); show(false); }
+
+function renderChips(){
+  const c = document.getElementById("chips"); c.innerHTML="";
+  PRESETS.forEach(([lbl,h])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(sel===h?" on":""); b.textContent=lbl;
+    b.onclick=()=>{ sel=h; document.getElementById("hours").value=""; renderChips(); };
+    c.appendChild(b);
+  });
+}
+function pickCustom(){
+  const v=parseFloat(document.getElementById("hours").value);
+  if(!isNaN(v)&&v>0){ sel=Math.max(1,Math.min(744,v)); document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on")); }
+}
+function fmt(iso){ return new Date(iso).toLocaleString(undefined,{month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }
+function human(s){
+  if(s<=0) return "expired";
+  const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60);
+  if(d>0) return `${d}d ${h}h`; if(h>0) return `${h}h ${m}m`; return `${m}m ${s%60}s`;
+}
+async function activate(){
+  const go=document.getElementById("go"); go.disabled=true; go.textContent="Activating…";
+  try{
+    const rec = await api("/api/activations",{method:"POST",body:JSON.stringify({
+      hours: sel, room: document.getElementById("room").value||null,
+      card_label: document.getElementById("label").value||null })});
+    const r=document.getElementById("result"); r.classList.remove("hidden");
+    const enc = rec.room ? (rec.encoded
+        ? `<span class="pill p-good"><span class="dot"></span>Card encoded${rec.card_uid?` · UID ${rec.card_uid}`:""}</span>`
+        : `<span class="pill p-bad"><span class="dot"></span>Recorded — encoder offline</span>`)
+      : `<span class="pill p-gold"><span class="dot"></span>Recorded (no room → not encoded)</span>`;
+    r.innerHTML = `<div class="serif big tabular">${human(rec.remaining_seconds)}</div>
+      <div class="muted" style="margin:2px 0 10px">Valid ${fmt(rec.valid_from)} → <b style="color:var(--text)">${fmt(rec.expires_at)}</b></div>${enc}`;
+    if(rec.encode_error){ r.innerHTML += `<div class="muted" style="margin-top:8px;font-size:12px">${rec.encode_error}</div>`; }
+    document.getElementById("label").value=""; refresh();
+  }catch(e){ alert(e.message); }
+  finally{ go.disabled=false; go.textContent="Activate card"; }
+}
+async function revoke(id){
+  if(!confirm("Revoke this card?")) return;
+  try{ await api(`/api/activations/${id}/revoke`,{method:"POST"}); refresh(); }catch(e){ alert(e.message); }
+}
+let acts=[];
+async function refresh(){
+  try{
+    acts = await api("/api/activations");
+    const [st] = await Promise.all([ api("/api/status") ]);
+    const e=document.getElementById("encoder");
+    e.className="pill "+(st.encoder_online?"p-good":"p-bad");
+    e.innerHTML=`<span class="dot"></span>Encoder ${st.encoder_online?"online":"offline"}`;
+    document.getElementById("bridgeInfo").textContent = st.bridge_url+" (building "+st.building+")";
+  }catch(e){}
+  paint();
+}
+function paint(){
+  const l=document.getElementById("list");
+  if(!acts.length){ l.innerHTML=`<div class="muted center" style="padding:18px 0">No activations yet</div>`; return; }
+  l.innerHTML = acts.map(a=>{
+    const state = a.state==="active"
+      ? `<span class="pill p-good tabular"><span class="dot"></span>${human(a.remaining_seconds)}</span>`
+      : a.state==="revoked" ? `<span class="pill p-bad">revoked</span>`
+      : `<span class="pill" style="background:var(--input);color:var(--muted)">expired</span>`;
+    const enc = a.room ? (a.encoded?`<span class="muted" style="font-size:11px">🔑 ${a.room}</span>`:`<span class="muted" style="font-size:11px">⚠ ${a.room}</span>`) : `<span class="muted" style="font-size:11px">no room</span>`;
+    return `<div class="act">
+      <div>
+        <div style="font-weight:600">${a.card_label||("Card #"+a.id)} <span class="muted" style="font-weight:400;font-size:12px">· ${enc.replace(/<[^>]+>/g,'')}</span></div>
+        <div class="muted tabular" style="font-size:12px">${fmt(a.valid_from)} → ${fmt(a.expires_at)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">${state}
+        ${a.state==="active"?`<button class="btn-ghost" onclick="revoke(${a.id})">Revoke</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+// live countdown tick (recompute remaining locally each second)
+setInterval(()=>{
+  let changed=false;
+  acts.forEach(a=>{ if(a.state==="active"){ a.remaining_seconds=Math.max(0,a.remaining_seconds-1); if(a.remaining_seconds===0){a.state="expired";changed=true;} } });
+  paint();
+}, 1000);
+
+function boot(){ show(true); renderChips(); refresh(); }
+if(token) boot(); else show(false);
+</script>
+</body>
+</html>
