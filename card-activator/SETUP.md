@@ -17,13 +17,17 @@ activate a card for 1 hour … 1 month).
 ## 1. Plug in the encoder
 Plug the USB card encoder into the PC. Let Windows finish installing it.
 
-## 2. Install Python 3 — **32-bit**
-1. Go to <https://www.python.org/downloads/windows/>.
-2. Download the **"Windows installer (32-bit)"** for the latest Python 3
-   (file name ends in **`-amd32`/`x86`**, *not* the 64-bit one — this matters,
-   the DLL is 32-bit).
+## 2. Install Python **3.12 — 32-bit**
+1. Go to <https://www.python.org/downloads/release/python-3129/>.
+2. Download **"Windows installer (32-bit)"** (file name ends in **`x86`**, *not*
+   the 64-bit `amd64`). Both matter: **32-bit** (the DLL is 32-bit) and **3.12**
+   (the bundled dependency wheels are built for 3.12).
 3. Run it → **tick "Add python.exe to PATH"** → *Install Now*.
-4. Verify: open **Command Prompt** and run `python --version` (should print 3.x).
+4. Verify: open **Command Prompt** and run `python --version` → `Python 3.12.x`.
+
+> **No internet needed for the install** — every Python dependency is already
+> bundled in the `vendor\` folders next to the two `.bat` files, so the scripts
+> install everything offline.
 
 ## 3. Get the project files onto the PC
 Pick whichever is easier:

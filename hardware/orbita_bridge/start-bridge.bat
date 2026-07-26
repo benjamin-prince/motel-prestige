@@ -9,7 +9,8 @@ REM ▲▲▲ EDIT THIS ▲▲▲
 set ORBITA_BRIDGE_PORT=8765
 
 echo Installing bridge dependencies (first run only)...
-python -m pip install -r requirements.txt
+REM Offline — all wheels are bundled in vendor\ (no internet needed, 32-bit Python 3.12).
+python -m pip install --no-index --find-links vendor -r requirements.txt
 
 echo.
 echo ================================================================

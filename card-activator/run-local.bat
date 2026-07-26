@@ -15,8 +15,9 @@ set ORBITA_BUILDING=01
 set DB_PATH=activations.db
 
 echo Installing dependencies (first run only)...
-REM Plain uvicorn (pure Python) — safest on 32-bit Windows Python.
-python -m pip install fastapi "uvicorn>=0.30"
+REM Offline — all wheels are bundled in vendor\ (no internet needed).
+REM Requires 32-bit Python 3.12 (the bundled wheels are cp312-win32).
+python -m pip install --no-index --find-links vendor fastapi uvicorn
 
 echo.
 echo ================================================================
