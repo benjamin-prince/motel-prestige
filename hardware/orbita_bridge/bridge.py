@@ -59,7 +59,27 @@ _uid_to_room = {}              # card_uid -> room, recorded on /write so /delete
 def _load_dll():
     global _dll
     if _dll is None:
-        dll = ctypes.WinDLL(DLL_PATH)
+        dll_dir = os.path.dirname(os.path.abspath(DLL_PATH))
+        # CLock.dll depends on dcrf32.dll (the card-reader driver). Put its
+        # folder on the DLL search path so Windows resolves the dependency,
+        # and fail early with a clear message if the driver is missing.
+        try:
+            if hasattr(os, "add_dll_directory"):
+                os.add_dll_directory(dll_dir)
+        except OSError:
+            pass
+        if not os.path.exists(os.path.join(dll_dir, "dcrf32.dll")):
+            raise RuntimeError(
+                f"dcrf32.dll missing in {dll_dir}. CLock.dll needs the card-reader "
+                "driver 'dcrf32.dll' next to it — copy it from the Orbita SDK folder."
+            )
+        try:
+            dll = ctypes.WinDLL(DLL_PATH)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Could not load CLock.dll ({exc}). Check that you are on 32-bit "
+                f"Python and that dcrf32.dll is present in {dll_dir}."
+            ) from exc
         dll.dv_connect.argtypes = [ctypes.c_int16]
         dll.dv_connect.restype = ctypes.c_int16
         dll.dv_disconnect.argtypes = []

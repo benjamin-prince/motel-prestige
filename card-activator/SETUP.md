@@ -46,36 +46,51 @@ git clone https://github.com/benjamin-prince/motel-prestige.git
 After this you have `C:\motel-prestige\hardware\orbita_bridge\` and
 `C:\motel-prestige\card-activator\`.
 
-## 4. One-time Orbita authorization
-Open the **Orbita lock-system software** that came with the encoder and complete
-its **authorization** step once (see the SDK PDF in
-`hardware\orbita_bridge\docs\`). The encoder won't write cards until this is done.
+## 4. Put the card-reader driver next to the DLL  ⚠️ required
+`CLock.dll` (in `hardware\orbita_bridge\`) needs its companion driver
+**`dcrf32.dll`** in the **same folder**, or it won't load.
+- Copy **`dcrf32.dll`** from the Orbita SDK folder (it sits next to `CLock.dll`,
+  ~152 KB) into `C:\motel-prestige\hardware\orbita_bridge\`.
+- *(If `dcrf32.dll` is already in that folder in the repo, skip this.)*
 
-## 5. Start the bridge
+## 5. One-time Orbita authorization
+Do this once so the encoder is allowed to write cards:
+1. Open the **Orbita lock-system software**.
+2. Go to **Function Cards**.
+3. Click **Interface Auth** → a dialog shows **"Auth Succeed"** → **OK**.
+4. **Close** the lock software.
+
+*(Optional hardware test: the SDK's **`obt.exe`** ("Orbita demo") lets you click
+**Connect** → put a card on the encoder → **Write / Read** to confirm the encoder
+works before starting the bridge.)*
+
+## 6. Start the bridge
 1. Open `C:\motel-prestige\hardware\orbita_bridge\`.
 2. Edit **`start-bridge.bat`** → set `ORBITA_BRIDGE_API_KEY` to any secret
    (remember it — the app uses the same value).
 3. **Double-click `start-bridge.bat`.** A window opens: *"Orbita bridge running
    on port 8765"*. **Leave it open.**
+   *(If it says "dcrf32.dll missing" → redo step 4. If "not a valid Win32
+   application" → you installed 64-bit Python; reinstall the 32-bit one.)*
 
-## 6. Start the app
+## 7. Start the app
 1. Open `C:\motel-prestige\card-activator\`.
 2. Edit **`run-local.bat`** → set `ORBITA_BRIDGE_API_KEY` to the **same secret**
-   as step 5, and set `APP_PASSWORD` (the staff login).
+   as step 6, and set `APP_PASSWORD` (the staff login).
 3. **Double-click `run-local.bat`.** First run installs the dependencies, then
    shows *"running → http://localhost:8080"*. **Leave it open.**
 
-## 7. Test it 🎉
+## 8. Test it 🎉
 1. Open a browser → **http://localhost:8080**.
 2. Log in with your `APP_PASSWORD`.
 3. Top-right should say **"Encoder online"** (green).
 4. Place a blank card on the encoder, pick a **duration** + a **Room**, click
    **Activate card** → it shows **"Card encoded"** with the card UID. Done.
 
-If it says *"Encoder offline"*: the bridge window (step 5) isn't running, or the
+If it says *"Encoder offline"*: the bridge window (step 6) isn't running, or the
 API keys in the two `.bat` files don't match.
 
-## 8. Make it start automatically (optional but recommended)
+## 9. Make it start automatically (optional but recommended)
 So staff never have to launch it:
 1. Press `Win + R`, type `shell:startup`, press Enter — a folder opens.
 2. Create shortcuts to **`start-bridge.bat`** and **`run-local.bat`** inside it.
