@@ -126,9 +126,12 @@ room. Do this **once per lock** and **once per energy saver**, in the Orbita
 2. **Bind the door lock** — carry that card to room 203's door and hold it on the
    lock → the lock accepts it and is now set to **203**. Then present a **Clock
    Card** (Function Cards → **Clock Card**) so the lock's date/time is correct.
-3. **Bind the energy saver** — hold the same 203 card on the in-room energy saver.
-   - If your energy saver is **room-specific**, this sets it to 203.
-   - If it's **building-wide** (accepts any valid hotel card), nothing to do.
+3. **Bind the energy saver (ESS-20)** — the **ESS-20 is room-specific**: per its
+   spec, *"only a specific-room card gets power; a name-only card cannot."* Hold
+   the same 203 Setup Room card on the ESS-20 in room 203 → it's now bound to
+   203. From then on **only a card encoded for 203** switches that room's power.
+   *(So in the app, the **Room** field is required for a card to work — a card
+   with no room powers nothing.)*
 4. The **Building** used here **must equal** the *Building* you type in the Card
    Time Activator app when you activate a card.
 
@@ -136,6 +139,12 @@ After this, a card activated for room **203** in the app opens its door **and**
 powers its energy saver for the chosen time. *(Repeat once for every room.)*
 
 ---
+
+### Hardware
+- **Door locks:** Orbita **E3092** (Mifare 1, 13.56 MHz).
+- **Energy savers:** Orbita **ESS-20** — **room-specific** (only a card for its
+  room powers it; a name-only card does not).
+- **Encoder + software:** Orbita USB encoder, Locksystem 5.6, SDK bridge.
 
 ### What runs where
 - **Bridge** (`:8765`) — drives the physical encoder. Local only.
