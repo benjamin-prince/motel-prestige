@@ -110,6 +110,33 @@ NSSM — <https://nssm.cc> — to wrap each `.bat` as a Windows service.)*
 
 ---
 
+## Appendix — Tell a lock & energy saver which room they are (e.g. 203)
+
+A card only opens something once each **physical device** has been bound to that
+room. Do this **once per lock** and **once per energy saver**, in the Orbita
+**Lock System** software (not in this app). Example for room **203**:
+
+1. **Make a "Setup Room" card for 203**
+   - Menu bar → **Card Setting** → the **Function Cards** dialog opens.
+   - Tick **Setup Room**, click the 🔍 and choose **Room 203** + the **Building**.
+   - Tick **Standard Room** (or **Suite Room** for a suite — a suite has several
+     doors, set them one by one).
+   - Put a blank card on the encoder → click **Setup Card** → *"Encoding Card
+     Succeed"*.
+2. **Bind the door lock** — carry that card to room 203's door and hold it on the
+   lock → the lock accepts it and is now set to **203**. Then present a **Clock
+   Card** (Function Cards → **Clock Card**) so the lock's date/time is correct.
+3. **Bind the energy saver** — hold the same 203 card on the in-room energy saver.
+   - If your energy saver is **room-specific**, this sets it to 203.
+   - If it's **building-wide** (accepts any valid hotel card), nothing to do.
+4. The **Building** used here **must equal** the *Building* you type in the Card
+   Time Activator app when you activate a card.
+
+After this, a card activated for room **203** in the app opens its door **and**
+powers its energy saver for the chosen time. *(Repeat once for every room.)*
+
+---
+
 ### What runs where
 - **Bridge** (`:8765`) — drives the physical encoder. Local only.
 - **App** (`:8080`) — the UI + its own SQLite database. Local only.
