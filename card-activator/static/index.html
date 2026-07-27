@@ -102,13 +102,19 @@
           <input id="hours" type="number" min="1" max="744" step="1" placeholder="e.g. 5" oninput="pickCustom()"/>
         </div>
         <div>
-          <label>Room <span class="muted">(for physical encode)</span></label>
+          <label>Room <span class="muted">— unlocks its door + energy saver</span></label>
           <input id="room" type="text" inputmode="numeric" placeholder="e.g. 101"/>
         </div>
       </div>
-      <div style="margin-top:12px">
-        <label>Card label <span class="muted">(optional)</span></label>
-        <input id="label" type="text" placeholder="e.g. Front desk spare"/>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label>Building <span class="muted">(must match the locks)</span></label>
+          <input id="building" type="text" placeholder="01"/>
+        </div>
+        <div>
+          <label>Card label <span class="muted">(optional)</span></label>
+          <input id="label" type="text" placeholder="e.g. Front desk spare"/>
+        </div>
       </div>
 
       <button class="btn" id="go" style="margin-top:16px" onclick="activate()">Activate card</button>
@@ -187,10 +193,11 @@ async function activate(){
   try{
     const rec = await api("/api/activations",{method:"POST",body:JSON.stringify({
       hours: sel, room: document.getElementById("room").value||null,
+      building: document.getElementById("building").value||null,
       card_label: document.getElementById("label").value||null })});
     const r=document.getElementById("result"); r.classList.remove("hidden");
     const enc = rec.room ? (rec.encoded
-        ? `<span class="pill p-good"><span class="dot"></span>Card encoded${rec.card_uid?` · UID ${rec.card_uid}`:""}</span>`
+        ? `<span class="pill p-good"><span class="dot"></span>Encoded — room ${rec.room} door + energy saver${rec.card_uid?` · UID ${rec.card_uid}`:""}</span>`
         : `<span class="pill p-bad"><span class="dot"></span>Recorded — encoder offline</span>`)
       : `<span class="pill p-gold"><span class="dot"></span>Recorded (no room → not encoded)</span>`;
     r.innerHTML = `<div class="serif big tabular">${human(rec.remaining_seconds)}</div>
@@ -212,6 +219,7 @@ async function refresh(){
     const e=document.getElementById("encoder");
     e.className="pill "+(st.encoder_online?"p-good":"p-bad");
     e.innerHTML=`<span class="dot"></span>Encoder ${st.encoder_online?"online":"offline"}`;
+    const bEl=document.getElementById("building"); if(bEl && !bEl.value) bEl.value = st.building||"";
     document.getElementById("bridgeInfo").textContent = st.bridge_url+" (building "+st.building+")";
   }catch(e){}
   paint();

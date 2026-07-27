@@ -60,6 +60,7 @@ def init_db():
                 id             INTEGER PRIMARY KEY AUTOINCREMENT,
                 card_label     TEXT,
                 room           TEXT,
+                building       TEXT,
                 duration_hours REAL NOT NULL,
                 valid_from     TEXT NOT NULL,
                 expires_at     TEXT NOT NULL,
@@ -71,6 +72,10 @@ def init_db():
             )
             """
         )
+        # migrate older DBs created before the building column existed
+        cols = [c[1] for c in conn.execute("PRAGMA table_info(activations)").fetchall()]
+        if "building" not in cols:
+            conn.execute("ALTER TABLE activations ADD COLUMN building TEXT")
         conn.commit()
 
 
@@ -113,10 +118,11 @@ def bridge_reachable(timeout: float = 1.5) -> bool:
         return False
 
 
-def encode_card(room: str, valid_from: datetime, valid_until: datetime) -> dict:
-    """Program the physical card via the Orbita bridge. Returns {card_uid} or raises."""
+def encode_card(room: str, valid_from: datetime, valid_until: datetime, building: str = BUILDING) -> dict:
+    """Program a room guest card via the Orbita bridge — the same card the room's
+    door lock AND its energy saver read. Returns {card_uid} or raises."""
     payload = {
-        "building": BUILDING,
+        "building": (building or BUILDING),
         "room": room.zfill(4)[-4:],
         "commdoors": "00",
         "arrival": valid_from.strftime(TIME_FORMAT),
@@ -166,6 +172,7 @@ def row_to_dict(r: sqlite3.Row) -> dict:
         "id": r["id"],
         "card_label": r["card_label"],
         "room": r["room"],
+        "building": (r["building"] if "building" in r.keys() else None),
         "duration_hours": r["duration_hours"],
         "valid_from": r["valid_from"],
         "expires_at": r["expires_at"],
@@ -187,6 +194,7 @@ class LoginIn(BaseModel):
 class ActivateIn(BaseModel):
     hours: float = Field(gt=0)
     room: str | None = None
+    building: str | None = None
     card_label: str | None = None
 
 
@@ -216,10 +224,11 @@ def activate(body: ActivateIn, _: bool = Depends(require_auth)):
     now = datetime.now().replace(microsecond=0)
     expires = now + timedelta(hours=hours)
 
+    building = (body.building or BUILDING)
     encoded, encode_error, card_uid = 0, None, None
-    if body.room:  # a physical encode is room-keyed on Orbita
+    if body.room:  # room-keyed on Orbita — one card = door lock + energy saver
         try:
-            res = encode_card(body.room, now, expires)
+            res = encode_card(body.room, now, expires, building)
             encoded, card_uid = 1, res["card_uid"]
         except RuntimeError as exc:
             encode_error = str(exc)
@@ -227,10 +236,10 @@ def activate(body: ActivateIn, _: bool = Depends(require_auth)):
     with closing(db()) as conn:
         cur = conn.execute(
             """INSERT INTO activations
-               (card_label, room, duration_hours, valid_from, expires_at, status,
+               (card_label, room, building, duration_hours, valid_from, expires_at, status,
                 encoded, encode_error, card_uid, created_at)
-               VALUES (?,?,?,?,?, 'active', ?,?,?,?)""",
-            (body.card_label, body.room, hours, now.isoformat(), expires.isoformat(),
+               VALUES (?,?,?,?,?,?, 'active', ?,?,?,?)""",
+            (body.card_label, body.room, building, hours, now.isoformat(), expires.isoformat(),
              encoded, encode_error, card_uid, now.isoformat()),
         )
         conn.commit()
