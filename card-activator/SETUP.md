@@ -53,16 +53,25 @@ After this you have `C:\motel-prestige\hardware\orbita_bridge\` and
   ~152 KB) into `C:\motel-prestige\hardware\orbita_bridge\`.
 - *(If `dcrf32.dll` is already in that folder in the repo, skip this.)*
 
-## 5. One-time Orbita authorization
-Do this once so the encoder is allowed to write cards:
-1. Open the **Orbita lock-system software**.
-2. Go to **Function Cards**.
-3. Click **Interface Auth** → a dialog shows **"Auth Succeed"** → **OK**.
-4. **Close** the lock software.
+## 5. Install the Orbita Lock System software & authorize the encoder
+This is a **one-time** step so the encoder will accept commands from our bridge.
 
-*(Optional hardware test: the SDK's **`obt.exe`** ("Orbita demo") lets you click
-**Connect** → put a card on the encoder → **Write / Read** to confirm the encoder
-works before starting the bridge.)*
+1. **Install** `Locksystem5.6.68.exe` (from Orbita) — Next → Install → Finish
+   (default path `C:\Program Files (x86)\ORBITA\LockingSystem5.6\`).
+2. Make sure the **USB encoder is plugged in**.
+3. **Launch** the Lock System, log in:
+   - **User Name: `001`   Password: `001`   Language: English** → OK
+4. **Register** (first launch only) — a Registration window appears. Enter the
+   Orbita registration code and click OK → *"Registration succeed"*:
+   - **Registration No.: `84CA-56F8-2AD7-C2D4`**
+   *(Without this, "Check Encoder" does nothing and encoding fails.)*
+5. Click **Check Encoder** (menu bar) → should say the encoder is connected.
+6. **Authorize the interface**: menu bar **Card Setting** → the **Function Cards**
+   dialog opens → click **Interface Auth** → **"Auth Succeed"** → OK → **Close**.
+7. Close the Lock System. The encoder is now authorized for the bridge.
+
+*(Optional hardware test: the SDK's **`obt.exe`** ("Orbita demo") — click
+**Connect** → place a card → **Write / Read** — confirms the encoder works.)*
 
 ## 6. Start the bridge
 1. Open `C:\motel-prestige\hardware\orbita_bridge\`.
