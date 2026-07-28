@@ -136,41 +136,40 @@
   <!-- APP -->
   <div id="app" class="hidden">
     <div class="card">
-      <!-- 1. Room + Building -->
-      <div class="row2" style="align-items:end">
-        <div>
-          <label data-fr="① Chambre" data-en="① Room"></label>
-          <input id="room" class="room-in" type="text" inputmode="numeric" autocomplete="off" placeholder="203"/>
-        </div>
-        <div>
-          <label data-fr="② Bâtiment" data-en="② Building"></label>
-          <div id="buildingField"></div>
-        </div>
-      </div>
+      <!-- 1. Floor -->
+      <label data-fr="① Étage" data-en="① Floor"></label>
+      <div class="durs" id="floors"></div>
+
+      <!-- 2. Room -->
+      <label style="margin-top:18px" data-fr="② Chambre" data-en="② Room"></label>
+      <div class="durs" id="rooms"></div>
       <div class="hint" data-fr="Une carte = serrure + energy saver de cette chambre"
            data-en="One card = this room's door lock + energy saver"></div>
 
-      <!-- 3. Duration -->
-      <label style="margin-top:20px" data-fr="③ Durée" data-en="③ Duration"></label>
-      <div class="durs" id="durs"></div>
+      <!-- 3. Stay type -->
+      <label style="margin-top:18px" data-fr="③ Type de séjour" data-en="③ Stay type"></label>
+      <div class="row2" id="staytype">
+        <button type="button" class="dur stbtn" data-type="hourly" onclick="setStay('hourly')"
+          data-fr="Court séjour" data-en="Short stay"></button>
+        <button type="button" class="dur stbtn" data-type="daily" onclick="setStay('daily')"
+          data-fr="Journée" data-en="Daily"></button>
+      </div>
 
-      <!-- 4. Activate -->
+      <!-- 4. Duration -->
+      <label style="margin-top:18px" data-fr="④ Durée" data-en="④ Duration"></label>
+      <div class="durs" id="durs"></div>
+      <div id="customWrap" style="margin-top:10px"></div>
+
+      <!-- 5. Activate -->
       <button class="btn btn-lg" id="go" onclick="activate()"></button>
       <div id="result"></div>
 
       <!-- options -->
       <details class="opts" style="margin-top:16px">
-        <summary data-fr="⚙ Options (libellé, durée exacte)"
-                 data-en="⚙ Options (label, exact hours)"></summary>
-        <div class="row2">
-          <div>
-            <label data-fr="Heures exactes" data-en="Exact hours"></label>
-            <input id="hours" class="txt" type="number" min="1" max="744" step="1" placeholder="5" oninput="pickCustom()"/>
-          </div>
-          <div>
-            <label data-fr="Libellé (optionnel)" data-en="Label (optional)"></label>
-            <input id="label" class="txt" type="text" placeholder="ex: carte réception"/>
-          </div>
+        <summary data-fr="⚙ Options (libellé)" data-en="⚙ Options (label)"></summary>
+        <div>
+          <label data-fr="Libellé (optionnel)" data-en="Label (optional)"></label>
+          <input id="label" class="txt" type="text" placeholder="ex: carte réception"/>
         </div>
       </details>
     </div>
@@ -187,7 +186,8 @@
 </div>
 
 <script>
-const PRESETS=[["1h",1],["2h",2],["3h",3],["6h",6],["12h",12],["1j / 1d",24],["1 sem / 1wk",168],["1 mois / 1mo",720]];
+// Stay types: Court séjour (hours) / Journée (days → hours). [fr,en,hours]
+const DURS={ hourly:[["1h","1h",1],["2h","2h",2]], daily:[["1 jour","1 day",24]] };
 const TXT={
   fr:{encOn:"Encodeur prêt",encOff:"Encodeur hors ligne",encNoDevice:"Encodeur non branché",bridgeOff:"Bridge hors ligne",saving:"Activation…",
       plugFirst:"Branchez l'encodeur d'abord",activateBtn:"Activer la carte",plugBtn:"🔌 Branchez l'encodeur",
@@ -204,7 +204,9 @@ const TXT={
 };
 let lang=localStorage.getItem("cta_lang")||"fr";
 let token=localStorage.getItem("cta_token")||"";
-let sel=24, acts=[];
+let acts=[];
+let floors=[], selFloor=null, selRoom="";
+let stayType="hourly", sel=1;
 const t=k=>TXT[lang][k];
 
 function applyLang(){
@@ -212,7 +214,7 @@ function applyLang(){
   document.getElementById("lfr").classList.toggle("on",lang==="fr");
   document.getElementById("len").classList.toggle("on",lang==="en");
   document.querySelectorAll("[data-fr]").forEach(el=>{ el.textContent=el.getAttribute("data-"+lang); });
-  renderDurs(); paint(); syncEnc();
+  renderFloors(); renderRooms(); setStay(stayType); paint(); syncEnc();
 }
 function setLang(l){ lang=l; localStorage.setItem("cta_lang",l); applyLang(); }
 
@@ -237,34 +239,75 @@ async function login(){
 }
 function logout(){token="";localStorage.removeItem("cta_token");show(false);}
 
-function renderDurs(){
-  const c=document.getElementById("durs"); if(!c) return; c.innerHTML="";
-  PRESETS.forEach(([lbl,h])=>{
-    const parts=lbl.split(" / ");
-    const b=document.createElement("button"); b.className="dur"+(sel===h&&!document.getElementById("hours").value?" on":"");
-    b.innerHTML=parts.length>1?`${parts[lang==="fr"?0:1]}`:lbl;
-    b.onclick=()=>{sel=h;document.getElementById("hours").value="";renderDurs();};
+function renderFloors(){
+  const c=document.getElementById("floors"); if(!c) return; c.innerHTML="";
+  floors.forEach(f=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="dur"+(selFloor===f?" on":"");
+    b.textContent=lang==="fr"?f.label_fr:f.label_en;
+    b.onclick=()=>{ selFloor=f; selRoom=""; renderFloors(); renderRooms(); };
     c.appendChild(b);
   });
 }
-function pickCustom(){const v=parseFloat(document.getElementById("hours").value);if(!isNaN(v)&&v>0){sel=Math.max(1,Math.min(744,v));renderDurs();}}
+function renderRooms(){
+  const c=document.getElementById("rooms"); if(!c) return;
+  if(!selFloor){ c.innerHTML=`<div class="hint">${lang==="fr"?"↑ Choisis d'abord un étage":"↑ Pick a floor first"}</div>`; return; }
+  c.innerHTML="";
+  (selFloor.rooms||[]).forEach(rm=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="dur"+(selRoom===rm?" on":"");
+    b.textContent=rm;
+    b.onclick=()=>{ selRoom=rm; renderRooms(); };
+    c.appendChild(b);
+  });
+}
+function setStay(type){
+  stayType=type;
+  document.querySelectorAll("#staytype .stbtn").forEach(b=>b.classList.toggle("on", b.dataset.type===type));
+  // default to first preset of this type
+  sel = DURS[stayType][0][2];
+  renderDur();
+}
+function renderDur(){
+  const c=document.getElementById("durs"); if(!c) return; c.innerHTML="";
+  const custEl=document.getElementById("custom");
+  const custActive = custEl && custEl.value;
+  DURS[stayType].forEach(([fr,en,h])=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="dur"+((sel===h&&!custActive)?" on":"");
+    b.textContent=lang==="fr"?fr:en;
+    b.onclick=()=>{ sel=h; const ci=document.getElementById("custom"); if(ci)ci.value=""; renderDur(); };
+    c.appendChild(b);
+  });
+  const w=document.getElementById("customWrap");
+  const isH=stayType==="hourly";
+  const keep = custEl ? custEl.value : "";
+  w.innerHTML=`<label class="field-cust" style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:8px;display:block">${isH?(lang==="fr"?"Heures personnalisées":"Custom hours"):(lang==="fr"?"Jours personnalisés":"Custom days")}</label>`+
+    `<input id="custom" class="txt" type="number" min="1" max="${isH?24:31}" value="${keep}" placeholder="${isH?'ex: 3':'ex: 2'}" oninput="pickCustom()">`;
+}
+function pickCustom(){
+  const el=document.getElementById("custom"); const v=parseFloat(el.value);
+  if(!isNaN(v)&&v>0){
+    sel = stayType==="hourly" ? Math.max(1,Math.min(24,v)) : Math.max(1,Math.min(31,v))*24;
+    document.querySelectorAll("#durs .dur").forEach(x=>x.classList.remove("on"));
+  }
+}
 function fmt(iso){return new Date(iso).toLocaleString(lang==="fr"?"fr-FR":"en-US",{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});}
 function human(s){if(s<=0)return t("expired");const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);if(d>0)return`${d}j ${h}h`;if(h>0)return`${h}h ${m}m`;return`${m}m ${s%60}s`;}
 
 async function activate(){
-  const room=document.getElementById("room").value.trim();
   const go=document.getElementById("go"); const r=document.getElementById("result");
   // 1) No encoder → ask to plug it in, don't create a phantom card.
   if(!encState.online){
     r.innerHTML=`<div class="ok warn"><div class="big">🔌</div><div class="rm">${t("plugFirst")}</div></div>`;
     refresh(); return;
   }
-  // 2) Room required.
-  if(!room){ r.innerHTML=`<div class="ok warn"><div class="rm">${t("needRoom")}</div></div>`; document.getElementById("room").focus(); return; }
+  // 2) Floor + room required.
+  if(!selRoom){ r.innerHTML=`<div class="ok warn"><div class="rm">${lang==="fr"?"Choisis un étage puis une chambre":"Pick a floor then a room"}</div></div>`; return; }
   go.disabled=true; go.textContent=t("saving");
   try{
     const rec=await api("/api/activations",{method:"POST",body:JSON.stringify({
-      hours:sel, room:room, building:(document.getElementById("building")||{}).value||null,
+      hours:sel, room:selRoom,
       card_label:document.getElementById("label").value||null })});
     const enc=rec.encoded
       ? `<span class="pill p-good"><span class="dot"></span>${t("okEnc")}</span>`
@@ -295,20 +338,12 @@ function syncEnc(){
   if(go){ go.textContent = encState.online ? t("activateBtn") : t("plugBtn"); go.style.filter = encState.online ? "" : "grayscale(.3)"; }
   document.getElementById("bridgeInfo").textContent=encState.url?`${encState.url} · ${lang==="fr"?"bât.":"bldg"} ${encState.building}`:"";
 }
-function renderBuilding(buildings){
-  const wrap=document.getElementById("buildingField"); if(!wrap) return;
-  if(document.getElementById("building")) return; // render once, keep the staff's choice
-  const list=(buildings&&buildings.length)?buildings:["01"];
-  wrap.innerHTML = list.length>1
-    ? `<select id="building" class="txt">${list.map(b=>`<option value="${b}">${b}</option>`).join("")}</select>`
-    : `<input id="building" class="txt" type="text" value="${list[0]}" />`;
-}
 async function refresh(){
   try{
     acts=await api("/api/activations");
     const st=await api("/api/status");
     encState={online:st.encoder_online,bridgeUp:st.bridge_up,building:st.building,url:st.bridge_url};
-    renderBuilding(st.buildings);
+    if(st.floors && !floors.length){ floors=st.floors; renderFloors(); renderRooms(); }
     syncEnc();
   }catch(e){}
   paint();

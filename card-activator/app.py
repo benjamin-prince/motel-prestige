@@ -37,6 +37,17 @@ BUILDING       = os.environ.get("ORBITA_BUILDING", "01")
 BUILDINGS      = [b.strip() for b in os.environ.get("ORBITA_BUILDINGS", BUILDING).split(",") if b.strip()] or [BUILDING]
 # When true (default), refuse to "record" a card if the encoder isn't connected — tell staff to plug it in.
 REQUIRE_ENCODER = os.environ.get("REQUIRE_ENCODER", "true").lower() in ("1", "true", "yes", "on")
+
+# Floor → rooms layout (staff pick a floor, then a room). Override via ROOMS_LAYOUT (JSON).
+_DEFAULT_FLOORS = [
+    {"floor": "0", "label_fr": "Rez-de-chaussée", "label_en": "Ground floor", "rooms": ["100", "101", "102", "103"]},
+    {"floor": "1", "label_fr": "1er étage",       "label_en": "1st floor",     "rooms": [str(200 + i) for i in range(10)]},
+    {"floor": "2", "label_fr": "2e étage",        "label_en": "2nd floor",     "rooms": [str(300 + i) for i in range(10)]},
+]
+try:
+    FLOORS = json.loads(os.environ["ROOMS_LAYOUT"]) if os.environ.get("ROOMS_LAYOUT") else _DEFAULT_FLOORS
+except Exception:
+    FLOORS = _DEFAULT_FLOORS
 TOKEN_TTL      = int(os.environ.get("TOKEN_TTL_SECONDS", str(12 * 3600)))
 MIN_HOURS      = 1
 MAX_HOURS      = 24 * 31          # 1 month
@@ -235,6 +246,7 @@ def status(_: bool = Depends(require_auth)):
         "bridge_up": bridge_reachable(),
         "building": BUILDING,
         "buildings": BUILDINGS,
+        "floors": FLOORS,
         "require_encoder": REQUIRE_ENCODER,
         "bridge_url": BRIDGE_URL,
     }
