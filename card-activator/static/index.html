@@ -60,8 +60,9 @@
 
   /* duration grid */
   .durs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:6px}
-  .dur{border:1.5px solid var(--border);background:var(--input);color:var(--text);border-radius:13px;
+  .dur{border:2px solid rgba(130,100,40,.30);background:var(--input);color:var(--text);border-radius:13px;
     padding:14px 4px;font-size:15px;font-weight:700;cursor:pointer;transition:all .12s;text-align:center;line-height:1.15}
+  .dur:hover{border-color:var(--gold)}
   .dur small{display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px}
   .dur.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 6px 16px -6px rgba(120,90,30,.5)}
   .dur.on small{color:rgba(255,255,255,.85)}
