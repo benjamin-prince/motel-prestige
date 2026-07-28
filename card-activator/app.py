@@ -33,6 +33,10 @@ DB_PATH        = os.environ.get("DB_PATH", "/data/activations.db")
 BRIDGE_URL     = os.environ.get("ORBITA_BRIDGE_URL", "http://localhost:8765").rstrip("/")
 BRIDGE_API_KEY = os.environ.get("ORBITA_BRIDGE_API_KEY", "")
 BUILDING       = os.environ.get("ORBITA_BUILDING", "01")
+# Selectable building list (comma-separated), e.g. ORBITA_BUILDINGS="01,02". Defaults to the single building.
+BUILDINGS      = [b.strip() for b in os.environ.get("ORBITA_BUILDINGS", BUILDING).split(",") if b.strip()] or [BUILDING]
+# When true (default), refuse to "record" a card if the encoder isn't connected — tell staff to plug it in.
+REQUIRE_ENCODER = os.environ.get("REQUIRE_ENCODER", "true").lower() in ("1", "true", "yes", "on")
 TOKEN_TTL      = int(os.environ.get("TOKEN_TTL_SECONDS", str(12 * 3600)))
 MIN_HOURS      = 1
 MAX_HOURS      = 24 * 31          # 1 month
@@ -230,6 +234,8 @@ def status(_: bool = Depends(require_auth)):
         "encoder_online": encoder_connected(),
         "bridge_up": bridge_reachable(),
         "building": BUILDING,
+        "buildings": BUILDINGS,
+        "require_encoder": REQUIRE_ENCODER,
         "bridge_url": BRIDGE_URL,
     }
 
@@ -248,6 +254,12 @@ def activate(body: ActivateIn, _: bool = Depends(require_auth)):
     expires = now + timedelta(hours=hours)
 
     building = (body.building or BUILDING)
+
+    # Don't create a phantom "recorded" card when there's no encoder — ask staff
+    # to plug it in first (a card that isn't physically written is useless).
+    if body.room and REQUIRE_ENCODER and not encoder_connected():
+        raise HTTPException(400, "ENCODER_OFFLINE")
+
     encoded, encode_error, card_uid = 0, None, None
     if body.room:  # room-keyed on Orbita — one card = door lock + energy saver
         try:
@@ -255,6 +267,8 @@ def activate(body: ActivateIn, _: bool = Depends(require_auth)):
             encoded, card_uid = 1, res["card_uid"]
         except RuntimeError as exc:
             encode_error = str(exc)
+            if REQUIRE_ENCODER:  # surface the real encoder error; don't record a failed card
+                raise HTTPException(400, encode_error)
 
     with closing(db()) as conn:
         cur = conn.execute(
