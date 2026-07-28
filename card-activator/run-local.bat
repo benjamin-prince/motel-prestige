@@ -15,9 +15,9 @@ set ORBITA_BUILDING=01
 set DB_PATH=activations.db
 
 echo Installing dependencies (first run only)...
-REM Offline — all wheels are bundled in vendor\ (no internet needed).
-REM Requires 32-bit Python 3.12 (the bundled wheels are cp312-win32).
-python -m pip install --no-index --find-links vendor fastapi uvicorn
+REM Prefer the bundled 32-bit / Python 3.12 wheels in vendor\; fall back to the
+REM internet only if they don't match this Python.
+python -m pip install --find-links vendor fastapi uvicorn
 
 echo.
 echo ================================================================
