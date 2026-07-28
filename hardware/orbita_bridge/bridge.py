@@ -125,6 +125,13 @@ def require_api_key(fn):
     return wrapper
 
 
+@app.errorhandler(Exception)
+def _on_error(exc):
+    # Surface any unexpected error as a clean JSON encoder error (HTTP 200 so the
+    # caller reads error_code) instead of a raw 500 HTML page.
+    return jsonify({"error_code": -1, "message": str(exc)}), 200
+
+
 @app.post("/connect")
 @require_api_key
 def connect():
@@ -183,10 +190,19 @@ def write_card():
     card_id = _outbuf(9)                                    # UUID, 8 chars — filled by the DLL
 
     with _lock:
-        code = dll.dv_write_card(
-            building, room, commdoors, arrival, departure,
-            suspendnum, ctypes.c_int16(int(data.get("mode", 0))), data11, card_id,
-        )
+        conn = dll.dv_connect(ctypes.c_int16(0))  # SDK requires a connection before writing
+        if conn != 0:
+            return jsonify(_error(conn))
+        try:
+            code = dll.dv_write_card(
+                building, room, commdoors, arrival, departure,
+                suspendnum, ctypes.c_int16(int(data.get("mode", 0))), data11, card_id,
+            )
+        finally:
+            try:
+                dll.dv_disconnect()
+            except Exception:
+                pass
     if code != 0:
         return jsonify(_error(code))
 
@@ -204,7 +220,16 @@ def read_card():
     card_id, data11 = _outbuf(9), _outbuf(33)
 
     with _lock:
-        code = dll.dv_read_card(cardno, building, room, commdoors, arrival, departure, card_id, data11)
+        conn = dll.dv_connect(ctypes.c_int16(0))  # connect before reading
+        if conn != 0:
+            return jsonify(_error(conn))
+        try:
+            code = dll.dv_read_card(cardno, building, room, commdoors, arrival, departure, card_id, data11)
+        finally:
+            try:
+                dll.dv_disconnect()
+            except Exception:
+                pass
     if code != 0:
         return jsonify(_error(code))
 
