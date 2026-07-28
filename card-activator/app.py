@@ -118,6 +118,22 @@ def bridge_reachable(timeout: float = 1.5) -> bool:
         return False
 
 
+def encoder_connected() -> bool:
+    """Ask the bridge whether the PHYSICAL encoder actually responds (not just
+    whether the bridge process is up). Silent probe (dv_connect beep=0)."""
+    if not bridge_reachable():
+        return False
+    headers = {"Content-Type": "application/json"}
+    if BRIDGE_API_KEY:
+        headers["Authorization"] = f"Bearer {BRIDGE_API_KEY}"
+    req = urllib.request.Request(f"{BRIDGE_URL}/status", data=b"{}", headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return bool(json.loads(resp.read().decode("utf-8")).get("encoder_connected"))
+    except (urllib.error.URLError, OSError):
+        return False
+
+
 def encode_card(room: str, valid_from: datetime, valid_until: datetime, building: str = BUILDING) -> dict:
     """Program a room guest card via the Orbita bridge — the same card the room's
     door lock AND its energy saver read. Returns {card_uid} or raises."""
@@ -208,7 +224,14 @@ def login(body: LoginIn):
 
 @app.get("/api/status")
 def status(_: bool = Depends(require_auth)):
-    return {"encoder_online": bridge_reachable(), "building": BUILDING, "bridge_url": BRIDGE_URL}
+    # "online" now means the PHYSICAL encoder responds, not just that the bridge
+    # process is up — so the badge only turns green when a card can really be encoded.
+    return {
+        "encoder_online": encoder_connected(),
+        "bridge_up": bridge_reachable(),
+        "building": BUILDING,
+        "bridge_url": BRIDGE_URL,
+    }
 
 
 @app.get("/api/activations")

@@ -186,12 +186,12 @@
 <script>
 const PRESETS=[["1h",1],["2h",2],["3h",3],["6h",6],["12h",12],["1j / 1d",24],["1 sem / 1wk",168],["1 mois / 1mo",720]];
 const TXT={
-  fr:{encOn:"Encodeur en ligne",encOff:"Encodeur hors ligne",saving:"Activation…",
+  fr:{encOn:"Encodeur prêt",encOff:"Encodeur hors ligne",encNoDevice:"Encodeur non branché",bridgeOff:"Bridge hors ligne",saving:"Activation…",
       okEnc:"Encodée — serrure + energy saver",okOff:"Enregistrée — encodeur hors ligne",
       okNoRoom:"Enregistrée (sans chambre → non encodée)",validTo:"Valide jusqu'à",
       needRoom:"Entrez d'abord le numéro de chambre",revoke:"Révoquer",revokeQ:"Révoquer cette carte ?",
       none:"Aucune carte pour le moment",wrongPw:"Mot de passe incorrect",expired:"expirée",revoked:"révoquée",noRoom:"sans chambre"},
-  en:{encOn:"Encoder online",encOff:"Encoder offline",saving:"Activating…",
+  en:{encOn:"Encoder ready",encOff:"Encoder offline",encNoDevice:"Encoder not plugged in",bridgeOff:"Bridge offline",saving:"Activating…",
       okEnc:"Encoded — door lock + energy saver",okOff:"Recorded — encoder offline",
       okNoRoom:"Recorded (no room → not encoded)",validTo:"Valid until",
       needRoom:"Enter the room number first",revoke:"Revoke",revokeQ:"Revoke this card?",
@@ -269,18 +269,20 @@ async function activate(){
 }
 async function revoke(id){ if(!confirm(t("revokeQ")))return; try{await api(`/api/activations/${id}/revoke`,{method:"POST"});refresh();}catch(e){alert(e.message);} }
 
-let encState={online:false,building:"",url:""};
+let encState={online:false,bridgeUp:false,building:"",url:""};
 function syncEnc(){
   const e=document.getElementById("enc");
+  let label=t("encOn");
+  if(!encState.online) label = encState.bridgeUp ? t("encNoDevice") : t("bridgeOff");
   e.className="enc "+(encState.online?"enc-on":"enc-off");
-  e.innerHTML=`<span class="dot"></span>${encState.online?t("encOn"):t("encOff")}`;
+  e.innerHTML=`<span class="dot"></span>${label}`;
   document.getElementById("bridgeInfo").textContent=encState.url?`${encState.url} · ${lang==="fr"?"bât.":"bldg"} ${encState.building}`:"";
 }
 async function refresh(){
   try{
     acts=await api("/api/activations");
     const st=await api("/api/status");
-    encState={online:st.encoder_online,building:st.building,url:st.bridge_url};
+    encState={online:st.encoder_online,bridgeUp:st.bridge_up,building:st.building,url:st.bridge_url};
     const bEl=document.getElementById("building"); if(bEl&&!bEl.value) bEl.value=st.building||"";
     syncEnc();
   }catch(e){}

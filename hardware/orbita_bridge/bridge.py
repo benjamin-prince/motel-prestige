@@ -143,6 +143,30 @@ def disconnect():
     return jsonify({"error_code": 0} if code == 0 else _error(code))
 
 
+@app.route("/status", methods=["GET", "POST"])
+@require_api_key
+def status():
+    """Silently probe whether the physical encoder actually responds.
+    dv_connect(0) = no buzzer beep, so this is safe to poll. error_code 0
+    means the USB encoder is really there; anything else = not connected."""
+    try:
+        dll = _load_dll()
+    except Exception as exc:  # DLL/driver missing, wrong Python, etc.
+        return jsonify({"encoder_connected": False, "error_code": -1, "message": str(exc)})
+    with _lock:
+        code = dll.dv_connect(ctypes.c_int16(0))  # beep=0 → silent
+        if code == 0:
+            try:
+                dll.dv_disconnect()
+            except Exception:
+                pass
+    return jsonify({
+        "encoder_connected": code == 0,
+        "error_code": code,
+        "message": "ok" if code == 0 else ERROR_MESSAGES.get(code, "Unknown encoder error"),
+    })
+
+
 @app.post("/write")
 @require_api_key
 def write_card():
