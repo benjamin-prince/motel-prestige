@@ -31,14 +31,25 @@ const isSameDay = (dateStr?: string) => !!dateStr && String(dateStr).slice(0, 10
 function daysUntil(dateStr: string) { return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000); }
 function daysAgo(dateStr: string) { return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000); }
 
-// Colored house tile — the visual anchor of every card
-function HouseIcon({ color }: { color: string }) {
+// Colored house tile — the visual anchor of every card (with people when occupied)
+function HouseIcon({ color, people }: { color: string; people?: boolean }) {
   return (
-    <svg viewBox="0 0 64 64" width="52" height="52" aria-hidden>
-      <path d="M32 8 L59 31 H51 V55 H13 V31 H5 Z" fill={color} />
-      <path d="M32 8 L59 31 H51 L32 14.5 L13 31 H5 Z" fill="#000" opacity="0.12" />
-      <rect x="26" y="37" width="12" height="18" rx="2.5" fill="#fff" opacity="0.92" />
-      <circle cx="35" cy="46" r="1.4" fill={color} />
+    <svg viewBox="0 0 84 64" width="76" height="58" aria-hidden>
+      {/* body + roof */}
+      <rect x="18" y="30" width="40" height="28" rx="4" fill={color} />
+      <path d="M38 7 L64 32 H12 Z" fill={color} />
+      <path d="M38 7 L64 32 H54 L38 16 L22 32 H12 Z" fill="#fff" opacity="0.20" />
+      {/* door */}
+      <rect x="32" y="40" width="12" height="18" rx="3" fill="#fff" opacity="0.92" />
+      <circle cx="41" cy="49" r="1.5" fill={color} />
+      {/* people (occupied) */}
+      {people && (
+        <g>
+          <circle cx="66" cy="38" r="7" fill={color} />
+          <path d="M54 60 c0-8 6-12 12-12 s12 4 12 12 Z" fill={color} />
+          <circle cx="66" cy="38" r="7" fill="#fff" opacity="0.22" />
+        </g>
+      )}
     </svg>
   );
 }
@@ -76,9 +87,12 @@ export default function RoomStatusPage() {
       setRooms(r); setReservations(res); setGuests(g); setRoomTypeConfigs(types);
       setArrivals((arr || []).filter((a: any) => isSameDay(a.check_in_date)));
       // Balance due per in-house room (total − paid), fetched in parallel.
+      // NOTE: this backend's FolioSummary.total is already the net BALANCE due
+      // (payments are stored as negative rows), so it IS the Solde dû — don't
+      // subtract amount_paid again.
       const sums = await Promise.all((res || []).map((rv: any) =>
         api.getFolioSummary(rv.id)
-          .then((s: any) => ({ room_id: rv.room_id, bal: Number(s.total || 0) - Number(s.amount_paid || 0) }))
+          .then((s: any) => ({ room_id: rv.room_id, bal: Number(s.total || 0) }))
           .catch(() => null)
       ));
       const map: Record<number, number> = {};
@@ -257,27 +271,28 @@ export default function RoomStatusPage() {
               <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
                 {items.map(({ room, guest, st, balance, dirty }) => {
                   const meta = STATE_META[st];
+                  const withPeople = st === "occupied" || st === "departure";
                   return (
                     <button key={room.id} onClick={() => openModal(room)}
-                      className="text-left transition-all hover:-translate-y-0.5 hover:shadow-md flex flex-col"
-                      style={{ height: 196, background: "var(--card)", border: `2px solid ${meta.ring}`, borderRadius: 16, padding: 12, cursor: "pointer" }}>
+                      className="transition-all hover:-translate-y-0.5 hover:shadow-lg flex flex-col items-stretch"
+                      style={{ height: 206, background: "var(--card)", border: `2px solid ${meta.color}`, borderRadius: 18, padding: "10px 12px", cursor: "pointer" }}>
                       {/* Top: room number + status pill */}
-                      <div className="flex items-start justify-between">
-                        <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>{room.room_number}</span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>
+                      <div className="flex items-center justify-between">
+                        <span style={{ fontSize: 21, fontWeight: 800, color: meta.color, lineHeight: 1 }}>{room.room_number}</span>
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ background: meta.color, color: "#fff" }}>
                           {lang === "fr" ? meta.fr : meta.en}
                         </span>
                       </div>
 
                       {/* Middle: house icon */}
-                      <div className="flex-1 flex items-center justify-center"><HouseIcon color={meta.color} /></div>
+                      <div className="flex-1 flex items-center justify-center"><HouseIcon color={meta.color} people={withPeople} /></div>
 
                       {/* Bottom: guest / price / balance — fixed block keeps every card equal height */}
-                      <div style={{ minHeight: 52 }}>
+                      <div className="text-center" style={{ minHeight: 56 }}>
                         {guest ? (
-                          <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{guest.name}</p>
+                          <p className="text-sm font-extrabold uppercase leading-tight truncate" style={{ color: "var(--text)" }}>{guest.name}</p>
                         ) : (
-                          <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>{roomTypeName(room.room_type)}</p>
+                          <p className="text-sm font-semibold" style={{ color: "var(--muted)" }}>{t.floor_label} {room.floor}</p>
                         )}
                         <p className="text-xs" style={{ color: "var(--muted)" }}>{fmt(room.price_per_night)} FCFA{t.per_night}</p>
                         {balance > 0 && (
@@ -287,9 +302,11 @@ export default function RoomStatusPage() {
 
                       {/* Housekeeping badge */}
                       {dirty && (
-                        <span className="self-start text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#fef3c7", color: "#92400e" }}>
-                          {l("Dirty", "Sale")}
-                        </span>
+                        <div className="text-center mt-1">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: "#fdf3d3", color: "#92702a" }}>
+                            {l("Dirty", "Sale")}
+                          </span>
+                        </div>
                       )}
                     </button>
                   );
