@@ -1,0 +1,66 @@
+name: Build Card Station (Windows)
+
+# Builds the front-desk executable on a real Windows runner. PyInstaller cannot
+# cross-compile, and the Orbita encoder driver (CLock.dll) is 32-bit — hence
+# windows-latest with an x86 interpreter.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "windows-app/**"
+      - "card-activator/**"
+      - "hardware/orbita_bridge/**"
+      - ".github/workflows/build-card-station.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12 (32-bit)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x86
+
+      - name: Confirm the interpreter really is 32-bit
+        shell: cmd
+        run: |
+          python -c "import struct,sys; assert struct.calcsize('P')*8==32, 'not 32-bit'; print(sys.version)"
+
+      - name: Install dependencies
+        shell: cmd
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r card-activator/requirements.txt
+          python -m pip install -r hardware/orbita_bridge/requirements.txt
+          python -m pip install pyinstaller==6.11.1 pystray==0.19.5 pillow==11.0.0
+
+      - name: Build CardStation.exe
+        shell: cmd
+        run: pyinstaller --clean --noconfirm windows-app/CardStation.spec
+
+      - name: Check the executable exists
+        shell: cmd
+        run: |
+          if not exist "dist\CardStation.exe" ( echo BUILD FAILED & exit /b 1 )
+          dir dist
+
+      - name: Package with a starter config
+        shell: cmd
+        run: |
+          mkdir out
+          copy dist\CardStation.exe out\
+          copy windows-app\LISEZ-MOI.txt out\ 2>nul
+          dir out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CardStation-windows-x86
+          path: out/
+          if-no-files-found: error
+          retention-days: 90

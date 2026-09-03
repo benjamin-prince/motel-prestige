@@ -1,0 +1,60 @@
+Card Station - poste d'encodage Motel Prestige
+==============================================
+
+CardStation.exe contient tout : le bridge de l'encodeur Orbita et l'interface
+du personnel. Il n'y a plus de Python a installer, plus de PATH a regler, plus
+de fichier .bat a modifier.
+
+
+DEMARRER
+--------
+Double-cliquez CardStation.exe.
+
+  - une icone doree apparait pres de l'horloge (zone de notification)
+  - le navigateur s'ouvre sur http://localhost:8080
+  - connectez-vous avec le mot de passe du personnel
+
+Clic droit sur l'icone : "Ouvrir l'interface" ou "Quitter".
+
+
+REGLAGES
+--------
+Au premier lancement, un fichier config.ini apparait a cote de l'exe :
+
+  [station]
+  password     = Prestige2026     <- mot de passe du personnel
+  building     = 01               <- code batiment Orbita
+  open_browser = yes
+
+Modifiez-le avec le Bloc-notes, puis relancez l'application.
+
+
+AVANT LA PREMIERE UTILISATION
+-----------------------------
+L'encodeur doit etre autorise une fois dans le logiciel Orbita Lock System :
+  Card Setting -> Interface Auth -> "Auth Succeed"
+
+Sans cette etape, l'interface affichera "Encoder offline".
+
+
+DEMARRAGE AUTOMATIQUE
+---------------------
+1. Win + R, tapez : shell:startup
+2. Placez-y un raccourci vers CardStation.exe
+
+Pour que le poste reparte seul apres une coupure de courant, Windows doit
+aussi ouvrir la session sans mot de passe :
+  Win + R -> netplwiz -> decocher "Les utilisateurs doivent entrer un nom
+  d'utilisateur et un mot de passe"
+
+
+DONNEES
+-------
+activations.db, a cote de l'exe, contient l'historique des activations.
+C'est le fichier a sauvegarder et a emporter en cas de changement de poste.
+
+
+SI L'ANTIVIRUS PROTESTE
+-----------------------
+Les executables produits par PyInstaller declenchent parfois une fausse alerte.
+Ajoutez une exclusion pour CardStation.exe.
