@@ -25,6 +25,17 @@ Plug the USB card encoder into the PC. Let Windows finish installing it.
 3. Run it → **tick "Add python.exe to PATH"** → *Install Now*.
 4. Verify: open **Command Prompt** and run `python --version` → `Python 3.12.x`.
 
+> **If you forgot to tick "Add to PATH", nothing is broken.** Windows then
+> answers `python` with *"Python est introuvable / Python was not found"* — that
+> is the Microsoft Store stub, not Python. The station's `.bat` files look for
+> the interpreter in the standard install folders and through the `py` launcher
+> before falling back to `PATH`, so they work either way.
+>
+> Check it with: `py -3.12-32 --version` → `Python 3.12.x`.
+>
+> Test in **Command Prompt** (`cmd`), not Git Bash / MINGW64 — the `.bat` files
+> run under `cmd.exe`.
+
 > **No internet needed for the install** — every Python dependency is already
 > bundled in the `vendor\` folders next to the two `.bat` files, so the scripts
 > install everything offline.
@@ -61,14 +72,25 @@ This is a **one-time** step so the encoder will accept commands from our bridge.
 2. Make sure the **USB encoder is plugged in**.
 3. **Launch** the Lock System, log in:
    - **User Name: `001`   Password: `001`   Language: English** → OK
-4. **Register** (first launch only) — a Registration window appears. Enter the
-   Orbita registration code and click OK → *"Registration succeed"*:
-   - **Registration No.: `84CA-56F8-2AD7-C2D4`**
-   *(Without this, "Check Encoder" does nothing and encoding fails.)*
+4. **Register** (first launch on a given PC only) — a Registration window
+   appears. Enter the Orbita registration number and click OK →
+   *"Registration succeed"*.
+   > The registration number is **tied to your Orbita licence**, and the one
+   > used in 2026 (`84CA-…-C2D4`) is **no longer accepted**. It is issued by
+   > Orbita — ask your supplier for the current number for this encoder;
+   > nobody else can generate one.
+   >
+   > **If this PC's Lock System is already registered, no code is needed** —
+   > the window does not appear and you go straight to step 5.
 5. Click **Check Encoder** (menu bar) → should say the encoder is connected.
 6. **Authorize the interface**: menu bar **Card Setting** → the **Function Cards**
    dialog opens → click **Interface Auth** → **"Auth Succeed"** → OK → **Close**.
 7. Close the Lock System. The encoder is now authorized for the bridge.
+
+> **Authorization can lapse.** Registration (step 4) and interface
+> authorization (step 6) are different things: the SDK returns
+> `-16 Reauthorization required` when only the *authorization* has expired.
+> Redo step 6 alone — that needs no registration code.
 
 *(Optional hardware test: the SDK's **`obt.exe`** ("Orbita demo") — click
 **Connect** → place a card → **Write / Read** — confirms the encoder works.)*
@@ -99,14 +121,80 @@ This is a **one-time** step so the encoder will accept commands from our bridge.
 If it says *"Encoder offline"*: the bridge window (step 6) isn't running, or the
 API keys in the two `.bat` files don't match.
 
-## 9. Make it start automatically (optional but recommended)
-So staff never have to launch it:
-1. Press `Win + R`, type `shell:startup`, press Enter — a folder opens.
-2. Create shortcuts to **`start-bridge.bat`** and **`run-local.bat`** inside it.
-   Both now launch when the PC logs in.
+### Ask the encoder what is actually wrong
 
-*(For a hands-off "service" install that runs even with no one logged in, use
-NSSM — <https://nssm.cc> — to wrap each `.bat` as a Windows service.)*
+Guessing is unnecessary — the bridge reports the SDK's own error code. With the
+bridge running, open **<http://localhost:8765/status>** in a browser *(if you
+set `ORBITA_BRIDGE_API_KEY`, temporarily blank it in `start-bridge.bat` and
+restart, or send the header `Authorization: Bearer <key>`)*.
+
+| What it returns | What it means | What to do |
+|---|---|---|
+| `"encoder_connected": true, "error_code": 0` | Everything is fine | The problem is elsewhere — check the app's API key |
+| `-16 Reauthorization required` | Authorization lapsed | Redo **step 5.6** (Interface Auth) only — **no registration code needed** |
+| `-9 Wrong authorization code` | The interface was never authorized on this PC | Do **step 5.6** |
+| `-3 Register encoder failed` | The Lock System is not registered on this PC | You need a current registration number from Orbita |
+| `-2 Connect encoder failed` | The USB encoder is not reachable | Re-plug it; confirm *Check Encoder* in the Lock System |
+| `dcrf32.dll missing` / DLL error | Driver or wrong Python | See steps 2–4 |
+
+## 9. Make it start automatically at every restart
+
+Once steps 6–8 work by hand, make the station come back on its own after any
+reboot or power cut.
+
+**Double-click `autostart\install-autostart.bat` — once.**
+
+It registers three Scheduled Tasks:
+
+| Task | Role |
+|---|---|
+| `MotelPrestige-OrbitaBridge` | the bridge, port 8765 |
+| `MotelPrestige-CardActivator` | the app, port 8080 (starts 15 s later) |
+| `MotelPrestige-StationWatchdog` | every 5 min: if a port is silent, restarts that task |
+
+The two service tasks:
+
+- trigger **at machine startup and at logon**,
+- have **no time limit**, so Windows never kills them,
+- **restart themselves within a minute** if they crash or someone closes the
+  window,
+- run with `CARD_STATION_AUTOSTART=1` so the `.bat` files never stop on a
+  "press any key" prompt.
+
+The watchdog is the belt-and-braces part: it catches what the restart rule
+cannot see — a task that never fired, a process killed cleanly, a window
+closed, a start that failed after a power cut.
+
+No administrator rights are needed — they run as the front-desk user, on the
+same ports (8765 / 8080) as a manual launch.
+
+### ⚠️ The half that people forget: log in without a password
+
+A logon trigger needs a logon. After a power cut the PC boots to the lock
+screen and **nothing starts** until someone types a password. To make it truly
+unattended:
+
+> `Win + R` → **`netplwiz`** → untick *"Users must enter a user name and
+> password to use this computer"* → OK → type the account's password twice.
+
+Windows then opens the session by itself at boot, and both tasks fire.
+
+### Checking and removing
+
+```
+schtasks /query /tn MotelPrestige-OrbitaBridge
+schtasks /query /tn MotelPrestige-CardActivator
+```
+
+Start them now without rebooting:
+
+```
+schtasks /run /tn MotelPrestige-OrbitaBridge
+schtasks /run /tn MotelPrestige-CardActivator
+```
+
+To undo it all: `autostart\uninstall-autostart.bat`. The two `.bat` files stay
+usable by hand afterwards.
 
 ---
 
